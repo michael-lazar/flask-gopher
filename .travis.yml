@@ -1,20 +1,24 @@
 language: python
-dist: trusty
+
 python:
   - 3.4
   - 3.5
   - 3.6
   - nightly
+
 matrix:
   allow_failures:
     - python: nightly
   fast_finish: true
+
 before_install:
-  - pip install --upgrade pip
-install:
   - pip install coveralls
+
+install:
   - pip install .
+
 script:
   - coverage run --source flask_gopher setup.py test
+
 after_success:
   - coveralls
