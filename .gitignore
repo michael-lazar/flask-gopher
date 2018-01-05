@@ -1,0 +1,10 @@
+.*
+!.travis.yml
+!.gitignore
+*~
+*.pyc
+*.log
+build
+dist
+*.egg-info
+venv/
