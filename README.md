@@ -1,7 +1,7 @@
 <h1 align="center">Flask-Gopher</h1>
 
 <p align="center">
-  <img alt="gopher" src="resources/gopher.jpg"/>
+  <img alt="gopher" src="resources/gopher_alt.jpg"/>
 </p>
 
 <p align="center">
