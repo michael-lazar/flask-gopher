@@ -13,7 +13,7 @@ from flask_gopher import gopher_url_for, make_menu_response, render_menu_templat
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestGopherExtensionFunctional(TestCase):
+class TestFunctional(TestCase):
     """
     Because the flask_gopher extension is built on hacking the WSGI protocol
     and the werkzeug HTTP server, I feel that the only way to sincerely
