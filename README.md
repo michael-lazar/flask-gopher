@@ -1,6 +1,10 @@
 # Flask-Gopher
 
 <p align="center">
+  <img alt="gopher" src="resources/gopher.jpg"/>
+</p>
+
+<p align="center">
   <a href="https://pypi.python.org/pypi/flask-gopher/">
     <img alt="pypi" src="https://img.shields.io/pypi/v/flask-gopher.svg?label=version"/>
   </a>
