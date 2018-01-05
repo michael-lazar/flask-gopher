@@ -261,8 +261,8 @@ class GopherExtension:
         def handle_error(error):
             if request.scheme == 'gopher':
                 if isinstance(error, HTTPException):
-                    body = [self.error(error.code, error.name), '',
-                            *self.text_wrap.wrap(error.description)]
+                    body = [self.error(error.code, error.name), '']
+                    body.extend(self.text_wrap.wrap(error.description))
                     return self.make_response(body, error.code)
                 else:
                     body = self.menu.error(500, 'Internal Error')
