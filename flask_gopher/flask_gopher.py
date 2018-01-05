@@ -68,12 +68,7 @@ class GopherMenu(object):
 
     TEMPLATE = '{}{:<1}\t{}\t{}\t{}'
 
-    def __init__(self, default_hostname=None, default_port=None):
-        if default_hostname is None:
-            default_hostname = request.environ.get('SERVER_NAME', 'localhost')
-        if default_port is None:
-            default_port = request.environ.get('SERVER_PORT', 70)
-
+    def __init__(self, default_hostname='127.0.0.1', default_port=70):
         self.default_hostname = default_hostname
         self.default_port = default_port
 
