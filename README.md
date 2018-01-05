@@ -1,7 +1,5 @@
 # Flask-Gopher
 
----
-
 <p align="center">
   <a href="https://pypi.python.org/pypi/flask-gopher/">
     <img alt="pypi" src="https://img.shields.io/pypi/v/flask-gopher.svg?label=version"/>
@@ -17,8 +15,8 @@
   </a>
 </p>
 
----
+## Installation
 
-https://tools.ietf.org/html/rfc1436
-
-https://tools.ietf.org/id/draft-matavka-gopher-ii-03.html
+```
+pip install flask_gopher
+```
