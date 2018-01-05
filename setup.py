@@ -2,7 +2,7 @@
 Flask-Gopher
 -------------
 
-Adds SQLAlchemy support to Flask
+Extends Flask to support the Gopher Protocol
 """
 from setuptools import setup
 from version import __version__ as version
@@ -15,7 +15,7 @@ setup(
     license='GPL-3.0',
     author='Michael Lazar',
     author_email='lazar.michael22@gmail.com',
-    description='Adds SQLAlchemy support to Flask',
+    description='Extends Flask to support the Gopher Protocol',
     long_description=__doc__,
     packages=['flask_gopher'],
     zip_safe=False,
