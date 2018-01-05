@@ -24,3 +24,20 @@
 ```
 pip install flask_gopher
 ```
+
+## Quickstart
+
+```python
+from flask import Flask
+from flask_gopher import GopherExtension, GopherWSGIRequestHandler
+
+app = Flask(__name__)
+gopher = GopherExtension(app)
+
+@app.route('/')
+def index():
+    return gopher.info('Look Ma, it's a gopher server!')
+
+if __name__ == '__main__':
+    app.run('127.0.0.1', 70, request_handler=GopherWSGIRequestHandler)
+```
