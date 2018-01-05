@@ -1,4 +1,4 @@
-# Flask-Gopher
+<h1 align="center">Flask-Gopher</h1>
 
 <p align="center">
   <img alt="gopher" src="resources/gopher.jpg"/>
