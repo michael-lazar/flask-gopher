@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
 ## Gopher Protocol References
 
-- https://tools.ietf.org/html/rfc1436
-- https://tools.ietf.org/html/rfc4266
-- https://tools.ietf.org/html/draft-matavka-gopher-ii-03
+- https://tools.ietf.org/html/rfc1436 (1993)
+- https://tools.ietf.org/html/rfc4266 (2005)
+- https://tools.ietf.org/html/draft-matavka-gopher-ii-03 (2015)
 - https://www.w3.org/Addressing/URL/4_1_Gopher+.html
 
