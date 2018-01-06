@@ -21,7 +21,7 @@
 
 ## Installation
 
-This library requires **python 3.4+**
+This library requires **python 3**
 
 ```
 pip install flask_gopher
