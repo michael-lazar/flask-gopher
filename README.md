@@ -29,15 +29,18 @@ pip install flask_gopher
 
 ```python
 from flask import Flask
-from flask_gopher import GopherExtension, GopherWSGIRequestHandler
+from flask_gopher import GopherExtension, GopherRequestHandler
 
 app = Flask(__name__)
 gopher = GopherExtension(app)
 
 @app.route('/')
 def index():
-    return gopher.info('Look Ma, it's a gopher server!')
+   return gopher.render_menu(
+       gopher.title('Menu Page'),
+       gopher.submenu('Home', url_for('index')),
+       gopher.info("Look Ma, it's a gopher server!"))
 
 if __name__ == '__main__':
-    app.run('127.0.0.1', 70, request_handler=GopherWSGIRequestHandler)
+   app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
 ```

@@ -1,19 +1,19 @@
 import os
 import socket
+import unittest
 from threading import Thread
-from unittest import TestCase
 from urllib.request import Request, urlopen
 
 from werkzeug.serving import make_server
 from flask import Flask, request, url_for
-from flask_gopher import GopherExtension, GopherWSGIRequestHandler
-from flask_gopher import gopher_url_for, make_menu_response, render_menu_template
+from flask_gopher import GopherExtension, GopherRequestHandler, GopherMenu
+from flask_gopher import render_menu, render_menu_template
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestFunctional(TestCase):
+class TestFunctional(unittest.TestCase):
     """
     Because the flask_gopher extension is built on hacking the WSGI protocol
     and the werkzeug HTTP server, I feel that the only way to sincerely
@@ -24,7 +24,7 @@ class TestFunctional(TestCase):
     connection strings to the server and check the validity of the response
     body from end-to-end.
     """
-    app = gopher = server = thread =  None
+    app = gopher = server = thread = None
 
     @classmethod
     def setUpClass(cls):
@@ -41,13 +41,12 @@ class TestFunctional(TestCase):
 
         @app.route('/menu')
         def menu():
-            return make_menu_response([
-                gopher.menu.submenu('Submenu', url_for('menu')),
-                gopher.menu.text('Text', url_for('static', filename='file.txt')),
-                gopher.menu.info('x' * 200),  # Long lines should be truncated
+            return render_menu(
+                gopher.submenu('Submenu', url_for('menu')),
+                gopher.file('Text', url_for('static', filename='file.txt')),
+                gopher.info('x' * 200),  # Long lines should be truncated
                 'x' * 200,  # Should looks the same as using menu.info()
-                gopher.menu.info('foo\r\nbar\t'),  # Tabs and newlines should be stripped
-            ])
+                gopher.info('foo\r\nbar\t'))  # Tabs and newlines should be stripped
 
         @app.route('/template')
         def template():
@@ -63,7 +62,7 @@ class TestFunctional(TestCase):
 
         @app.route('/external_menu_url')
         def external_menu_url():
-            return gopher_url_for('page', page=2, _external=True)
+            return gopher.url_for('page', page=2, _external=True)
 
         @app.route('/search')
         def search():
@@ -75,7 +74,7 @@ class TestFunctional(TestCase):
 
         # This is the same thing as calling app.run(), but it returns a handle
         # to the server so we can call server.shutdown() later.
-        cls.server = make_server('127.0.0.1', 0, app, request_handler=GopherWSGIRequestHandler)
+        cls.server = make_server('127.0.0.1', 0, app, request_handler=GopherRequestHandler)
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
@@ -196,7 +195,7 @@ class TestFunctional(TestCase):
         self.assertTrue(resp.headers['Server'].startswith('Flask-Gopher'))
         self.assertEqual(resp.read(), b'Hello World!')
 
-    def test_make_menu_response(self):
+    def test_render_menu(self):
         """
         Check that gopher menu pages are properly formatted.
         """
@@ -232,3 +231,32 @@ class TestFunctional(TestCase):
             port=self.server.port,
             space=' ' * (self.gopher.width - len('Title')))
         self.assertEqual(resp, text.encode())
+
+
+class TestGopherMenu(unittest.TestCase):
+    def setUp(self):
+        self.menu = GopherMenu('10.10.10.10', 7007)
+
+    def test_default_entry(self):
+        line = self.menu.file('0', 'Hello World')
+        self.assertEqual(line, '0\tHello World\t/\t10.10.10.10\t7007\r\n')
+
+    def test_default_no_port_external(self):
+        line = self.menu.submenu('Hello World', hostname='hngopher.com')
+        self.assertEqual(line, '1\tHello World\t/\thngopher.com\t70\r\n')
+
+    def test_strip_invalid_characters(self):
+        line = self.menu.query('Hello \r\nWorld\t', selector='/\tfoo')
+        self.assertEqual(line, '7\tHello World\t/\t10.10.10.10\t7007\r\n')
+
+    def test_html(self):
+        line = self.menu.html('Firefox', 'http://www.firefox.com')
+        self.assertEqual(line, 'h\tFirefox\tURL:http://www.firefox.com\t10.10.10.10\t7007\r\n')
+
+    def test_title(self):
+        line = self.menu.title('Hello World')
+        self.assertEqual(line, 'i\tHello World\tTITLE\texample.com\t0\r\n')
+
+
+if __name__ == '__main__':
+    unittest.main()

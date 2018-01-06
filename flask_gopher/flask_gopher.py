@@ -3,7 +3,7 @@ import weakref
 import textwrap
 from functools import partialmethod, wraps
 
-from flask import request, render_template, make_response, current_app, url_for
+from flask import request, make_response, render_template, current_app, url_for
 from flask import _app_ctx_stack as stack
 from werkzeug.urls import url_quote
 from werkzeug.serving import WSGIRequestHandler
@@ -94,7 +94,7 @@ class GopherMenu(object):
         return self.TEMPLATE.format(type_code, text, selector, hostname, port)
 
     # Most of the selectors follow the same standard format
-    text = partialmethod(entry, '0')
+    file = partialmethod(entry, '0')
     submenu = partialmethod(entry, '1')
     ccso = partialmethod(entry, '2')
     binhex = partialmethod(entry, '4')
@@ -227,7 +227,7 @@ class GopherExtension:
         """
         @app.context_processor
         def add_context():
-            return {'gopher': self, 'gopher_url_for': gopher_url_for}
+            return {'gopher': self}
 
         app.add_template_filter(lambda s: s.rjust(self.width), 'rjust')
         app.add_template_filter(lambda s: s.center(self.width), 'center')
@@ -257,11 +257,11 @@ class GopherExtension:
             if request.scheme == 'gopher':
                 if isinstance(error, HTTPException):
                     body = [self.error(error.code, error.name), '']
-                    body.extend(self.text_wrap.wrap(error.description))
-                    return self.make_response(body, error.code)
+                    body += self.text_wrap.wrap(error.description)
+                    return self.render_menu(*body, code=error.code)
                 else:
                     body = self.menu.error(500, 'Internal Error')
-                    return self.make_response(body, 500)
+                    return self.render_menu(body, code=500)
             return error
 
         for cls in HTTPException.__subclasses__():
@@ -278,7 +278,7 @@ class GopherExtension:
             return ctx.gopher_menu
 
     # Add shortcuts for all of the GopherMenu types
-    text = _add_menu_func(GopherMenu.text)
+    file = _add_menu_func(GopherMenu.file)
     submenu = _add_menu_func(GopherMenu.submenu)
     ccso = _add_menu_func(GopherMenu.ccso)
     binhex = _add_menu_func(GopherMenu.binhex)
@@ -297,7 +297,7 @@ class GopherExtension:
     title = _add_menu_func(GopherMenu.title)
     error = _add_menu_func(GopherMenu.error)
 
-    def make_response(self, rv, code=200):
+    def render_menu(self, *lines, code=200):
         """
         This wraps the flask.make_response() formatting to generate
         syntactically valid gopher menus. This includes chopping the
@@ -306,7 +306,7 @@ class GopherExtension:
         body is a (.) period.
 
         Args:
-            rv (list or string): A block of text or a list of text lines.
+            lines (str): Lines of text to add to the menu
             code (int): The response status code, useful for log messages
 
         Reference:
@@ -334,13 +334,9 @@ class GopherExtension:
             https://tools.ietf.org/id/draft-matavka-gopher-ii-03.html
             https://tools.ietf.org/html/rfc1436
         """
-        if isinstance(rv, list):
-            rv = '\n'.join(rv)
-
         menu_line_pattern = re.compile('^.+\t.*\t.*\t.*$')
-
-        menu_lines = []
-        for line in rv.splitlines():
+        raw_menu, menu_lines = '\n'.join(lines), []
+        for line in raw_menu.splitlines():
             line = line.rstrip()
             if not menu_line_pattern.match(line):
                 # The line is normal block of text, convert it to an INFO
@@ -355,21 +351,20 @@ class GopherExtension:
             menu_lines.append(line)
 
         if not menu_lines or menu_lines[-1] != '.':
-            # Servers SHOULD send the full stop (.) after menus and may
-            # OPTIONALLY send it after other files
             menu_lines.append('.')
         menu_lines.append('')
 
         rv = '\r\n'.join(menu_lines)
         return make_response(rv, code)
 
-    def render_template(self, template_name, **context):
+    def render_menu_template(self, template_name, **context):
         """
-        This a convenience for rendering gopher menu templates and rendering
-        the resulting text in a gopher menu response.
+        This is convenience wrapper around flask.render_template() that
+        returns a gopher menu.
         """
-        response = render_template(template_name, **context)
-        return self.make_response(response)
+        code = context.get('code', 200)
+        template_string = render_template(template_name, **context)
+        return self.render_menu(template_string, code=code)
 
     @staticmethod
     def url_for(endpoint, _external=False, _type=1, **values):
@@ -389,18 +384,22 @@ class GopherExtension:
         return url
 
 
-def make_menu_response(rv):
-    return current_app.extensions['gopher'].make_response(rv)
+def render_menu(*lines, code=200):
+    """
+    Alternate method
+    """
+    return current_app.extensions['gopher'].render_menu(*lines, code=code)
 
 
 def render_menu_template(template_name, **context):
-    return current_app.extensions['gopher'].render_template(template_name, **context)
+    """
+    Alternate method
+    """
+    method = current_app.extensions['gopher'].render_menu_template
+    return method(template_name, **context)
 
 
-gopher_url_for = GopherExtension.url_for
-
-
-class GopherWSGIRequestHandler(WSGIRequestHandler):
+class GopherRequestHandler(WSGIRequestHandler):
     """
     Gopher is a lightweight, client/server-oriented query/answer protocol built
     on top of TCP/IP. This class a shim for the base Werkzeug HTTP request

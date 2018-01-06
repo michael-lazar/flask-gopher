@@ -16,5 +16,5 @@ from .__version__ import __version__
 
 from .flask_gopher import GopherMenu
 from .flask_gopher import GopherExtension
-from .flask_gopher import GopherWSGIRequestHandler
-from .flask_gopher import make_menu_response, render_menu_template, gopher_url_for
+from .flask_gopher import GopherRequestHandler
+from .flask_gopher import render_menu, render_menu_template
