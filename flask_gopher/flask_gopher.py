@@ -331,7 +331,7 @@ class GopherExtension:
             characters in length.  Clients may truncate to a length convenient
             to them.
 
-            https://tools.ietf.org/id/draft-matavka-gopher-ii-03.html
+            https://tools.ietf.org/html/draft-matavka-gopher-ii-03
             https://tools.ietf.org/html/rfc1436
         """
         menu_line_pattern = re.compile('^.+\t.*\t.*\t.*$')

@@ -239,23 +239,23 @@ class TestGopherMenu(unittest.TestCase):
 
     def test_default_entry(self):
         line = self.menu.file('Hello World')
-        self.assertEqual(line, '0Hello World\t/\t10.10.10.10\t7007\r\n')
+        self.assertEqual(line, '0Hello World\t/\t10.10.10.10\t7007')
 
     def test_default_no_port_external(self):
         line = self.menu.submenu('Hello World', hostname='hngopher.com')
-        self.assertEqual(line, '1Hello World\t/\thngopher.com\t70\r\n')
+        self.assertEqual(line, '1Hello World\t/\thngopher.com\t70')
 
     def test_strip_invalid_characters(self):
         line = self.menu.query('Hello \r\nWorld\t', selector='/\tfoo')
-        self.assertEqual(line, '7Hello World\t/\t10.10.10.10\t7007\r\n')
+        self.assertEqual(line, '7Hello World\t/\t10.10.10.10\t7007')
 
     def test_html(self):
         line = self.menu.html('Firefox', 'http://www.firefox.com')
-        self.assertEqual(line, 'hFirefox\tURL:http://www.firefox.com\t10.10.10.10\t7007\r\n')
+        self.assertEqual(line, 'hFirefox\tURL:http://www.firefox.com\t10.10.10.10\t7007')
 
     def test_title(self):
         line = self.menu.title('Hello World')
-        self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0\r\n')
+        self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
 
 
 if __name__ == '__main__':
