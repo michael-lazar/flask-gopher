@@ -102,7 +102,7 @@ def index():
     if request.scheme == 'gopher':
         return "iThis was a gopher request\tfake\texample.com\t0\r\n"
     else:
-        return "<html><body>This was a HTTP connection"</body></html>       
+        return "<html><body>This was an HTTP request</body></html>" 
 ```
 
 
