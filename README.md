@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
 The python WSGI (Web Server Gateway Interface) is an established API that defines how python web servers (gunicorn, mod_wsgi, etc) communicate with application frameworks (Flask, Django, etc). It defines a clean boundary between low-level socket and request handling, and high-level application logic.
 
-WSGI was designed to be a very simple and flexible API, but at its heart it's built around HTTP. As such, it incorperates some HTTP specific components like request/response headers and status codes. Gopher is more primative and doesn't use these components. Here's an example of the difference in fetching a document with the two protocols:
+WSGI was designed to be a very simple and flexible API, but at its heart it's built around HTTP. As such, it incorperates some HTTP specific components like request/response headers and status codes. Gopher is more basic and doesn't use these components. Here's an example of the difference in fetching a document with the two protocols:
 
 <table>
 <tr><th colspan=2>HTTP</th><th colspan=2>Gopher</th></tr>
