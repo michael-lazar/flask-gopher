@@ -246,8 +246,8 @@ class TestGopherMenu(unittest.TestCase):
         self.assertEqual(line, '1Hello World\t/\thngopher.com\t70')
 
     def test_strip_invalid_characters(self):
-        line = self.menu.query('Hello \r\nWorld\t', selector='/\tfoo')
-        self.assertEqual(line, '7Hello World\t/\t10.10.10.10\t7007')
+        line = self.menu.query('Hello \r\nWorld\t', selector='/\tfoo\t')
+        self.assertEqual(line, '7Hello World\t/foo\t10.10.10.10\t7007')
 
     def test_html(self):
         line = self.menu.html('Firefox', 'http://www.firefox.com')
