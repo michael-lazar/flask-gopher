@@ -19,7 +19,15 @@
   </a>
 </p>
 
+## About
+
+Flask-Gopher is an extension library for the Python Flask web microframework that adds support for gopher request handling. The Gopher Protocol is an alternative to HTTP that peaked in popularity in the mid 90's. There are still a handful of gopher sites maintained by enthusiasts; you can learn more about the history of the protocol at http://gopher.floodgap.com/gopher/.
+
+This extension works by adding a thin Gopher => HTTP compatability layer into the built-in WSGI server. It turns gopher requests into pseudo HTTP GET requests so they can be handled by Flask (or any other python WSGI app) natively. This means that you get full access to Flask's routing, templating engine, debugger, and other tools to build your gopher server.
+
 ## Installation
+
+This package requires **python 3**
 
 ```
 pip install flask_gopher
@@ -47,8 +55,8 @@ if __name__ == '__main__':
 
 ## Gopher Protocol References
 
-- https://tools.ietf.org/html/rfc1436
-- https://tools.ietf.org/html/rfc4266
-- https://tools.ietf.org/html/draft-matavka-gopher-ii-03
+- https://tools.ietf.org/html/rfc1436 (1993)
+- https://tools.ietf.org/html/rfc4266 (2005)
+- https://tools.ietf.org/html/draft-matavka-gopher-ii-03 (2015)
 - https://www.w3.org/Addressing/URL/4_1_Gopher+.html
 
