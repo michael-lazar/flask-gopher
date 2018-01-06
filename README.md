@@ -88,7 +88,7 @@ In order to resolve the differences between gopher and HTTP, this library provid
 - Discard the response status line
 - Discard all response headers
 
-Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides hooks into the connection type that can be accessed from the Flask request object.
+Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata that can be accessed from the Flask request object.
 
 ```python
 from flask import Flask, request
