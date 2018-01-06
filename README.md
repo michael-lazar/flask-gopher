@@ -91,15 +91,9 @@ In order to resolve the differences between gopher and HTTP, **Flask-Gopher** pr
 Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata that can be accessed from the Flask request object.
 
 ```python
-from flask import Flask, request
-from flask_gopher import GopherExtension
-
-app = Flask(__name__)
-gopher = GopherExtension(app)
-
 @app.route('/')
 def index():
-    if request.scheme == 'gopher':
+    if flask.request.scheme == 'gopher':
         return "iThis was a gopher request\tfake\texample.com\t0\r\n"
     else:
         return "<html><body>This was an HTTP request</body></html>" 
