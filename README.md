@@ -44,3 +44,11 @@ def index():
 if __name__ == '__main__':
    app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
 ```
+
+## Gopher Protocol References
+
+- https://tools.ietf.org/html/rfc1436
+- https://tools.ietf.org/html/rfc4266
+- https://tools.ietf.org/html/draft-matavka-gopher-ii-03
+- https://www.w3.org/Addressing/URL/4_1_Gopher+.html
+
