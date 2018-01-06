@@ -82,7 +82,7 @@ Content-Type: text/html
 
 In order to resolve the differences between gopher and HTTP, **Flask-Gopher** provides a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
 
-- Set the request's *REQUEST_METHOD* (e.g. *GET*, *POST*) to ``GET``
+- Set the request's *REQUEST_METHOD* to ``GET``
 - Set the request's *SERVER_PROTOCOL* (e.g. *HTTP/1.1*) to ``gopher``
 - Set the request's *wsgi.url_scheme* (e.g. *https*)  to ``gopher``
 - Discard the response status line
