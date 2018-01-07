@@ -155,7 +155,7 @@ def index():
     return menu
 ```
 
-Here's what the rendered document looks like:
+Here's what the rendered menu looks like:
 
 ```
 $ curl gopher://localhost:8007
