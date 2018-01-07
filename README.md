@@ -101,7 +101,7 @@ def index():
 
 ## Building Gopher Menus
 
-Gopher menus are structured text files that display information about the current page and links to other gopher resources. A gopher menu is loosely equivalent to an HTML document with only ``<a>`` and ``<span>`` tags. Each line in the menu has a *type* that decribes what kind of resource it links to (text, binary, html, telnet, etc.).
+Gopher menus are structured text files that display information about the current page and contain links to other gopher resources. A gopher menu is loosely equivalent to an HTML document with only ``<a>`` and ``<span>`` tags. Each line in the menu has a *type* that decribes what kind of resource it links to (text, binary, html, telnet, etc.).
 
 Flask-Gopher provides several helper methods for constructing gopher menu lines of different types:
 
