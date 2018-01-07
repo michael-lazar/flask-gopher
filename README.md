@@ -156,19 +156,17 @@ def index():
 
 Here's what the rendered menu looks like:
 
-```
-$ curl gopher://localhost:8007
-
-1Home	/	127.0.0.1	8007
-1XKCD comics	/fun/xkcd	gopher.floodgap.com	70
-IPicture of a cat	/static/cat.png	127.0.0.1	8007
-hProject source	URL:https://github.com/michael-lazar/flask-gopher	127.0.0.1	8007
-iHello world!	fake	example.com	0
-iYou can also use	fake	example.com	0
-iUn-formatted lines of text	fake	example.com	0
-iFormatted line	fake	example.com	0
-.
-```
+>     $ curl gopher://localhost:8007
+>
+>     1Home	/	127.0.0.1	8007
+>     1XKCD comics	/fun/xkcd	gopher.floodgap.com	70
+>     IPicture of a cat	/static/cat.png	127.0.0.1	8007
+>     hProject source	URL:https://github.com/michael-lazar/flask-gopher	127.0.0.1	8007
+>     iHello world!	fake	example.com	0
+>     iYou can also use	fake	example.com	0
+>     iUn-formatted lines of text	fake	example.com	0
+>     iFormatted line	fake	example.com	0
+>     .
 
 ## Using Templates
 
@@ -196,7 +194,6 @@ def index():
     return gopher.render_menu_template('example_menu.gopher')
 ```
 
-
 ## Gopher Protocol References
 
 - https://tools.ietf.org/html/rfc1436 (1993)
@@ -204,3 +201,13 @@ def index():
 - https://tools.ietf.org/html/draft-matavka-gopher-ii-03 (2015)
 - https://www.w3.org/Addressing/URL/4_1_Gopher+.html
 
+An interesting side note, the python standard library used to contain a gopher module. It was deprecated in 2.5, and removed in 2.6. (<em>https://www.python.org/dev/peps/pep-0004/</em>)
+
+
+>     Module name:   gopherlib
+>     Rationale:     The gopher protocol is not in active use anymore.
+>     Date:          1-Oct-2000.
+>     Documentation: Documented as deprecated since Python 2.5.  Removed
+>                   in Python 2.6.
+
+There's also a reference gopher client in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
