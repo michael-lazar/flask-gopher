@@ -146,29 +146,31 @@ def index():
         # Link to an external web page
         gopher.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
         
-        # Informational text
-        gopher.info('Hello world!'),
-        
-        # Raw text will automatically be converted into informational text
-        "You can also use\nUn-formatted lines of text",
-        
-        # You can also format the lines manually if you desire
-        "iFormatted line\tfake\texample.com\t0")    
+        # Info lines display text in the menu
+        gopher.info('This is informational text'),
+
+        # Plain text will be converted into info lines
+        "\n    There's no place\n    like ::1\n",
+
+        # Or you can build the lines manually
+        "0About this page\t/about.txt\t127.0.0.1\t8007")
 ```
 
 Here's what the rendered menu looks like:
 
->     $ curl gopher://localhost:8007
->
->     1Home	/	127.0.0.1	8007
->     1XKCD comics	/fun/xkcd	gopher.floodgap.com	70
->     IPicture of a cat	/static/cat.png	127.0.0.1	8007
->     hProject source	URL:https://github.com/michael-lazar/flask-gopher	127.0.0.1	8007
->     iHello world!	fake	example.com	0
->     iYou can also use	fake	example.com	0
->     iUn-formatted lines of text	fake	example.com	0
->     iFormatted line	fake	example.com	0
->     .
+```
+$ curl gopher://localhost:8007
+1Home	/	127.0.0.1	8007
+1XKCD comics	/fun/xkcd	gopher.floodgap.com	70
+IPicture of a cat	/static/cat.png	127.0.0.1	8007
+hProject source	URL:https://github.com/michael-lazar/flask-gopher	127.0.0.1	8007
+iThis is informational text	fake	example.com	0
+i 	fake	example.com	0
+i    There's no place	fake	example.com	0
+i    like ::1	fake	example.com	0
+i 	fake	example.com	0
+0About this page	/about.txt	127.0.0.1	8007
+```
 
 And here's what it looks like in lynx:
 
