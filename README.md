@@ -99,6 +99,62 @@ def index():
         return "<html><body>This was an HTTP request</body></html>" 
 ```
 
+## Building Gopher Menus
+
+Gopher menus are structured text files that display information about the current page and links to other gopher resources. A gopher menu is loosely equivalent to an HTML document with only ``<a>`` and ``<span>`` tags. Each line in the menu has a *type* that decribes what kind of resource it links to (text, binary, html, telnet, etc.).
+
+Flask-Gopher provides several helper methods for constructing gopher menu lines of different types:
+
+| Method        | Link Descriptor     | Meaning  |
+| ------------- | ------------------- | -------- |
+| gopher.file | 0 | Plain text file |
+| gopher.submenu | 1 | Gopher menu |
+| gopher.csso | 2 | CSSO database; other databases |
+| gopher.error | 3 | Error message |
+| gopher.binhex | 4 | Macintosh BinHex file |
+| gopher.archive | 5 | Archive file (zip, tar, gzip) |
+| gopher.uuencoded | 6 | UUEncoded file |
+| gopher.query | 7 | Search query |
+| gopher.telnet | 8 | Telnet session |
+| gopher.binary | 9 | Binary file |
+| gopher.gif | g | GIF format graphics file |
+| gopher.image | I | Other Image file |
+| gopher.doc | d | Word processing document (ps, pdf, doc) |
+| gopher.sound | s | Sound file |
+| gopher.video | ; | Video file |
+| gopher.info | i | Information line |
+| gopher.title | i | Title line |
+| gopher.html | h | HTML document |
+
+Most of these methods require a text description of the link, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines into ``gopher.render_menu()`` to build the complete response text for the menu.
+
+```python
+@app.route('/home')
+def home():
+    menu = gopher.render_menu(
+        # Link to an internal gopher menu
+        gopher.submenu('Home', '/home'),
+        
+        # Link to an external gopher menu
+        gopher.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
+        
+        # Link to a static file, using flask.url_for() to build a relative path
+        gopher.image('Picture of a cat', url_for('static', filename='cat.png')),
+        
+        # Link to an external web page
+        gopher.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
+        
+        # Informational lines display text in the menu but don't have a link
+        gopher.info('Hello world!'),
+        
+        # Unformatted text will be automatically converted into info lines
+        "You can also use \n unformatted lines of text",
+        
+        # Or you can choose to format the menu line manually
+        "iOr format the line manually\tfake\texample.com\t0")
+
+    return menu
+```
 
 ## Gopher Protocol References
 
