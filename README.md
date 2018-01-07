@@ -147,10 +147,10 @@ def index():
         # Informational lines display text in the menu but don't have a link
         gopher.info('Hello world!'),
         
-        # Un-formatted text will be automatically converted into info lines
+        # Plain text will be automatically converted into INFO
         "You can also use\nUn-formatted lines of text",
         
-        # Or you can format the line manually
+        # Or you can format the link manually
         "iFormatted line\tfake\texample.com\t0"]    
     return gopher.render_menu(*lines)
 ```
