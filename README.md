@@ -126,7 +126,7 @@ Flask-Gopher provides several helper methods for constructing gopher menu lines:
 | gopher.title | i | Title line |
 | gopher.html | h | HTML document |
 
-Most of these methods require a text description of the link, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines into ``gopher.render_menu()`` to build the complete response text for the menu.
+Most of these methods require a text description for the line, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines into ``gopher.render_menu()`` to build the complete response text for the menu.
 
 ```python
 @app.route('/')
