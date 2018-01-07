@@ -47,7 +47,7 @@ gopher = GopherExtension(app)
 @app.route('/')
 def index():
     return gopher.render_menu(
-        gopher.title('This is a Gopher Menu Page'),
+        gopher.title('My GopherHole'),
         gopher.submenu('Home', url_for('index')),
         gopher.info("Look Ma, it's a gopher server!"))
 
