@@ -185,7 +185,7 @@ Hello from my gopher template!
 Your IP address is {{ request.remote_addr }}
 
 {{ '_' * gopher.width }}
-{{ request.environ['SERVER_SOFTWARE'] | rjust }}
+{{ ('Served by ' + request.environ['SERVER_SOFTWARE']) | rjust }}
 
 ```
 
