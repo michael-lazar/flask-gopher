@@ -25,6 +25,8 @@ Flask-Gopher is an extension library for the Python Flask web microframework tha
 
 This extension works by adding a thin Gopher => HTTP compatability layer into Flask's built-in WSGI server. It turns gopher requests into pseudo HTTP GET requests so they can be handled by Flask (or any other python WSGI app) natively. This means that you get full access to Flask's routing, templating engine, debugger, and other tools to build your gopher server.
 
+This project exists because I wanted a modern python gopher server with support for dynamic routing. At first I was considering writing one from scratch with the same stucture as Flask, but then I thought *"Why not just use Flask?"*
+
 ## Installation
 
 This package requires **python 3**
@@ -210,4 +212,4 @@ An interesting side note, the python standard library used to contain a gopher m
 >     Documentation: Documented as deprecated since Python 2.5.  Removed
 >                    in Python 2.6.
 
-There's also a reference gopher client in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
+There's also still a reference gopher client in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
