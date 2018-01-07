@@ -202,6 +202,11 @@ def index():
     return gopher.render_menu_template('example_menu.gopher')
 ```
 
+<p align="center">
+  <img alt="gopher" src="resources/example_template.png"/>
+</p>
+
+
 ## Gopher Protocol References
 
 - https://tools.ietf.org/html/rfc1436 (1993)
