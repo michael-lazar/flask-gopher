@@ -156,7 +156,7 @@ def index():
         "iFormatted line\tfake\texample.com\t0")    
 ```
 
-Here's what the example menu looks like after it's been rendered:
+Here's what the rendered menu looks like:
 
 >     $ curl gopher://localhost:8007
 >
@@ -169,6 +169,12 @@ Here's what the example menu looks like after it's been rendered:
 >     iUn-formatted lines of text	fake	example.com	0
 >     iFormatted line	fake	example.com	0
 >     .
+
+And here's what it looks like in lynx:
+
+<p align="center">
+  <img alt="gopher" src="resources/example_menu.png"/>
+</p>
 
 ## Using Templates
 
