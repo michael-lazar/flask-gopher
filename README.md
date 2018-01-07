@@ -131,22 +131,29 @@ Most of these methods require a text description for the line, and will accept a
 ```python
 @app.route('/')
 def index():
-    menu = gopher.render_menu(
+    lines = [
         # Link to an internal gopher menu
         gopher.submenu('Home', '/'),
+        
         # Link to an external gopher menu
         gopher.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
+        
         # Link to a static file, using flask.url_for() to build a relative path
         gopher.image('Picture of a cat', url_for('static', filename='cat.png')),
+        
         # Link to an external web page
         gopher.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
+        
         # Informational lines display text in the menu but don't have a link
         gopher.info('Hello world!'),
+        
         # Un-formatted text will be automatically converted into info lines
         "You can also use\nUn-formatted lines of text",
+        
         # Or you can format the line manually
-        "iFormatted line\tfake\texample.com\t0")
-    return menu
+        "iFormatted line\tfake\texample.com\t0"
+    ]    
+    return gopher.render_menu(*lines)
 ```
 
 Here's what the rendered menu looks like:
