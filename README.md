@@ -149,10 +149,10 @@ def index():
         # Informational text
         gopher.info('Hello world!'),
         
-        # Plain text will be automatically converted into info lines
+        # Raw text will automatically be converted into informational text
         "You can also use\nUn-formatted lines of text",
         
-        # You can also format the lines manually
+        # You can also format the lines manually if you desire
         "iFormatted line\tfake\texample.com\t0")    
 ```
 
