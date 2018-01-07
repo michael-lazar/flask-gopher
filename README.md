@@ -80,7 +80,7 @@ Content-Type: text/html
 <td width="20%"><pre>(body)</pre></td>
 </tr></table>
 
-In order to resolve the differences between gopher and HTTP, **Flask-Gopher** provides a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
+In order to resolve the differences between gopher and HTTP, **Flask-Gopher** implements a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
 
 - Set the request's *REQUEST_METHOD* to ``GET``
 - Set the request's *SERVER_PROTOCOL* (e.g. *HTTP/1.1*) to ``gopher``
