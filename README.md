@@ -131,7 +131,7 @@ Most of these methods require a text description for the link, and will accept a
 ```python
 @app.route('/')
 def index():
-    lines = [
+    return gopher.render_menu(
         # Link to an internal gopher menu
         gopher.submenu('Home', '/'),
         
@@ -151,9 +151,8 @@ def index():
         "You can also use\nUn-formatted lines of text",
         
         # You can also format the lines manually
-        "iFormatted line\tfake\texample.com\t0"]
-    
-    return gopher.render_menu(*lines)
+        "iFormatted line\tfake\texample.com\t0"
+        )    
 ```
 
 Here's what the rendered menu looks like:
