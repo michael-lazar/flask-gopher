@@ -170,8 +170,6 @@ Here's what the rendered menu looks like:
 >     iFormatted line	fake	example.com	0
 >     .
 
-And here's what it looks like in lynx:
-
 <p align="center">
   <img alt="gopher" src="resources/example_menu.png"/>
 </p>
