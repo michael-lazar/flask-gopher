@@ -172,8 +172,6 @@ i 	fake	example.com	0
 0About this page	/about.txt	127.0.0.1	8007
 ```
 
-And here's what it looks like in lynx:
-
 <p align="center">
   <img alt="gopher" src="resources/example_menu.png"/>
 </p>
