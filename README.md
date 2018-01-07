@@ -172,7 +172,7 @@ iFormatted line	fake	example.com	0
 
 ## Using Templates
 
-You can also use Flask's templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add the *.gopher* suffix.
+You can also use Flask's templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add the *.gopher* suffix. An example template file is shown below:
 
 **templates/example_menu.gopher**
 ```
@@ -189,7 +189,7 @@ Your IP address is {{ request.remote_addr }}
 
 ```
 
-Call ``gopher.render_menu_template()`` from inside of your route to compile a template into a gopher menu.
+Call ``gopher.render_menu_template()`` from inside of your route to compile the template into a gopher menu.
 
 ```python
 @app.route('/')
