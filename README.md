@@ -189,7 +189,7 @@ Your IP address is {{ request.remote_addr }}
 
 ```
 
-Use ``gopher.render_menu_template()`` to render the template as a gopher menu:
+Call ``gopher.render_menu_template()`` from inside of your route to compile a template into a gopher menu.
 
 ```python
 @app.route('/')
