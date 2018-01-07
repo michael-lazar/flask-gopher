@@ -151,8 +151,7 @@ def index():
         "You can also use\nUn-formatted lines of text",
         
         # Or you can format the line manually
-        "iFormatted line\tfake\texample.com\t0"
-    ]    
+        "iFormatted line\tfake\texample.com\t0"]    
     return gopher.render_menu(*lines)
 ```
 
