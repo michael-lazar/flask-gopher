@@ -147,13 +147,28 @@ def index():
         # Informational lines display text in the menu but don't have a link
         gopher.info('Hello world!'),
         
-        # Unformatted text will be automatically converted into info lines
-        "You can also use \n unformatted lines of text",
+        # Un-formatted text will be automatically converted into info lines
+        "You can also use\nUn-formatted lines of text",
         
-        # Or you can choose to format the menu line manually
-        "iOr format the line manually\tfake\texample.com\t0")
-
+        # Or you can format the line manually
+        "iFormatted line\tfake\texample.com\t0")
     return menu
+```
+
+Here's what the rendered document looks like:
+
+```
+$ curl gopher://localhost:8007
+
+1Home	/	127.0.0.1	8007
+1XKCD comics	/fun/xkcd	gopher.floodgap.com	70
+IPicture of a cat	/static/cat.png	127.0.0.1	8007
+hProject source	URL:https://github.com/michael-lazar/flask-gopher	127.0.0.1	8007
+iHello world!	fake	example.com	0
+iYou can also use	fake	example.com	0
+iUn-formatted lines of text	fake	example.com	0
+iFormatted line	fake	example.com	0
+.
 ```
 
 ## Gopher Protocol References
