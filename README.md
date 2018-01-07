@@ -170,7 +170,7 @@ Here's what the example menu looks like after it's been rendered:
 >     iFormatted line	fake	example.com	0
 >     .
 
-And here's what it looks like in the lynx browser:
+And here's what it looks like in lynx:
 
 <p align="center">
   <img alt="gopher" src="resources/example_menu.png"/>
