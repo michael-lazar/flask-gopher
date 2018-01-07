@@ -151,8 +151,7 @@ def index():
         "You can also use\nUn-formatted lines of text",
         
         # You can also format the lines manually
-        "iFormatted line\tfake\texample.com\t0"
-        )    
+        "iFormatted line\tfake\texample.com\t0")    
 ```
 
 Here's what the rendered menu looks like:
