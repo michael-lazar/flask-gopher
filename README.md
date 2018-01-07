@@ -144,13 +144,13 @@ def index():
         # Link to an external web page
         gopher.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
         
-        # Informational lines display text in the menu but don't have a link
+        # Informational text
         gopher.info('Hello world!'),
         
-        # Plain text will be automatically converted into INFO
+        # Plain text will be automatically converted into info lines
         "You can also use\nUn-formatted lines of text",
         
-        # Or you can format the link manually
+        # You can also format the lines manually
         "iFormatted line\tfake\texample.com\t0"]    
     return gopher.render_menu(*lines)
 ```
