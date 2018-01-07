@@ -186,7 +186,6 @@ Your IP address is {{ request.remote_addr }}
 
 {{ '_' * gopher.width }}
 {{ ('Served by ' + request.environ['SERVER_SOFTWARE']) | rjust }}
-
 ```
 
 Call ``gopher.render_menu_template()`` from inside of your route to compile the template into a gopher menu.
