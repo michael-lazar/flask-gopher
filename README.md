@@ -170,6 +170,12 @@ Here's what the example menu looks like after it's been rendered:
 >     iFormatted line	fake	example.com	0
 >     .
 
+And here's what it looks like in the lynx browser:
+
+<p align="center">
+  <img alt="gopher" src="resources/example_menu.png"/>
+</p>
+
 ## Using Templates
 
 You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add a *.gopher* suffix. An example template file is shown below:
