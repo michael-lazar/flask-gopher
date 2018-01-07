@@ -170,6 +170,34 @@ iFormatted line	fake	example.com	0
 .
 ```
 
+## Using Templates
+
+You can also use Flask's templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add the *.gopher* suffix.
+
+**templates/example_menu.gopher**
+```
+{{ 'Centered Title' | center }}
+{{ '--------------' | center }}
+
+{{ gopher.submenu('Home', url_for('index')) }}
+
+Hello from my gopher template!
+Your IP address is {{ request.remote_addr }}
+
+{{ '_' * gopher.width }}
+{{ request.environ['SERVER_SOFTWARE'] | rjust }}
+
+```
+
+Use ``gopher.render_menu_template()`` to render the template as a gopher menu:
+
+```python
+@app.route('/')
+def index():
+    return gopher.render_menu_template('example_menu.gopher')
+```
+
+
 ## Gopher Protocol References
 
 - https://tools.ietf.org/html/rfc1436 (1993)
