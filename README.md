@@ -129,11 +129,11 @@ Flask-Gopher provides several helper methods for constructing gopher menu lines 
 Most of these methods require a text description of the link, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines into ``gopher.render_menu()`` to build the complete response text for the menu.
 
 ```python
-@app.route('/home')
-def home():
+@app.route('/')
+def index():
     menu = gopher.render_menu(
         # Link to an internal gopher menu
-        gopher.submenu('Home', '/home'),
+        gopher.submenu('Home', '/'),
         
         # Link to an external gopher menu
         gopher.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
