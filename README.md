@@ -172,7 +172,7 @@ Here's what the example menu looks like after it's been rendered:
 
 ## Using Templates
 
-You can use Flask's templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add the *.gopher* suffix. An example template file is shown below:
+You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gopher will automatically inject the ``gopher`` object to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add the *.gopher* suffix. An example template file is shown below:
 
 **templates/example_menu.gopher**
 ```
