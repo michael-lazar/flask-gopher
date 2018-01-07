@@ -56,6 +56,7 @@ class GopherMenu(object):
         s       BINARY      Sound file
         ;       BINARY      Video file
         h       TEXT        HTML document
+        i       -           Info line
 
     Additional types are listed here for completeness, and may be added later:
 
@@ -68,14 +69,14 @@ class GopherMenu(object):
 
     TEMPLATE = '{}{:<1}\t{}\t{}\t{}'
 
-    def __init__(self, default_hostname='127.0.0.1', default_port=70):
-        self.default_hostname = default_hostname
+    def __init__(self, default_host='127.0.0.1', default_port=70):
+        self.default_host = default_host
         self.default_port = default_port
 
-    def entry(self, type_code, text, selector='/', hostname=None, port=None):
-        hostname = hostname if hostname is not None else self.default_hostname
+    def entry(self, type_code, text, selector='/', host=None, port=None):
+        host = host if host is not None else self.default_host
         if port is None:
-            if hostname == self.default_hostname:
+            if host == self.default_host:
                 # Internal link, use the server's port
                 port = self.default_port
             else:
@@ -88,10 +89,10 @@ class GopherMenu(object):
 
         text = str(text).translate(table)
         selector = str(selector).translate(table)
-        hostname = str(hostname).translate(table)
+        host = str(host).translate(table)
         port = str(port).translate(table)
 
-        return self.TEMPLATE.format(type_code, text, selector, hostname, port)
+        return self.TEMPLATE.format(type_code, text, selector, host, port)
 
     # Most of the selectors follow the same standard format
     file = partialmethod(entry, '0')
@@ -109,8 +110,8 @@ class GopherMenu(object):
     sound = partialmethod(entry, 's')
     video = partialmethod(entry, ';')
 
-    # info has special placeholder values for the hostname/port
-    info = partialmethod(entry, 'i', selector='fake', hostname='example.com', port=0)
+    # info has special placeholder values for the host/port
+    info = partialmethod(entry, 'i', selector='fake', host='example.com', port=0)
 
     def html(self, text, url):
         """
@@ -258,10 +259,10 @@ class GopherExtension:
                 if isinstance(error, HTTPException):
                     body = [self.error(error.code, error.name), '']
                     body += self.text_wrap.wrap(error.description)
-                    return self.render_menu(*body, code=error.code)
+                    return self.render_menu(*body), error.code
                 else:
                     body = self.menu.error(500, 'Internal Error')
-                    return self.render_menu(body, code=500)
+                    return self.render_menu(body), 500
             return error
 
         for cls in HTTPException.__subclasses__():
@@ -272,9 +273,9 @@ class GopherExtension:
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'gopher_menu'):
-                hostname = request.environ['SERVER_NAME']
+                host = request.environ['SERVER_NAME']
                 port = request.environ['SERVER_PORT']
-                ctx.gopher_menu = GopherMenu(hostname, port)
+                ctx.gopher_menu = GopherMenu(host, port)
             return ctx.gopher_menu
 
     # Add shortcuts for all of the GopherMenu types
@@ -297,7 +298,7 @@ class GopherExtension:
     title = _add_menu_func(GopherMenu.title)
     error = _add_menu_func(GopherMenu.error)
 
-    def render_menu(self, *lines, code=200):
+    def render_menu(self, *lines):
         """
         This wraps the flask.make_response() formatting to generate
         syntactically valid gopher menus. This includes chopping the
@@ -306,8 +307,7 @@ class GopherExtension:
         body is a (.) period.
 
         Args:
-            lines (str): Lines of text to add to the menu
-            code (int): The response status code, useful for log messages
+            *lines (str): Lines of text to add to the menu
 
         Reference:
 
@@ -354,22 +354,20 @@ class GopherExtension:
             menu_lines.append('.')
         menu_lines.append('')
 
-        rv = '\r\n'.join(menu_lines)
-        return make_response(rv, code)
+        return '\r\n'.join(menu_lines)
 
     def render_menu_template(self, template_name, **context):
         """
         This is convenience wrapper around flask.render_template() that
-        returns a gopher menu.
+        renders a gopher menu.
         """
-        code = context.get('code', 200)
         template_string = render_template(template_name, **context)
-        return self.render_menu(template_string, code=code)
+        return self.render_menu(template_string)
 
     @staticmethod
     def url_for(endpoint, _external=False, _type=1, **values):
         """
-        Injects the type to the beginning of the selector for external URLs
+        Injects the type into the beginning of the selector for external URLs.
 
             gopher://127.0.0.1:70/home => gopher://127.0.0.1:70/1/home
         """
@@ -384,11 +382,11 @@ class GopherExtension:
         return url
 
 
-def render_menu(*lines, code=200):
+def render_menu(*lines):
     """
     Alternate method
     """
-    return current_app.extensions['gopher'].render_menu(*lines, code=code)
+    return current_app.extensions['gopher'].render_menu(*lines)
 
 
 def render_menu_template(template_name, **context):

@@ -99,7 +99,8 @@ class TestFunctional(unittest.TestCase):
             chunks = []
             while True:
                 data = s.recv(2048)
-                if not data: break
+                if not data:
+                    break
                 chunks.append(data)
             return b''.join(chunks)
 
@@ -242,7 +243,7 @@ class TestGopherMenu(unittest.TestCase):
         self.assertEqual(line, '0Hello World\t/\t10.10.10.10\t7007')
 
     def test_default_no_port_external(self):
-        line = self.menu.submenu('Hello World', hostname='hngopher.com')
+        line = self.menu.submenu('Hello World', host='hngopher.com')
         self.assertEqual(line, '1Hello World\t/\thngopher.com\t70')
 
     def test_strip_invalid_characters(self):
