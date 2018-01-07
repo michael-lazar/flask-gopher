@@ -156,7 +156,7 @@ def index():
         "iFormatted line\tfake\texample.com\t0")    
 ```
 
-Here's what the example menu looks like after it's been rendered:
+Here's what the rendered menu looks like:
 
 >     $ curl gopher://localhost:8007
 >
