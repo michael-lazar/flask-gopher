@@ -208,6 +208,6 @@ An interesting side note, the python standard library used to contain a gopher m
 >     Rationale:     The gopher protocol is not in active use anymore.
 >     Date:          1-Oct-2000.
 >     Documentation: Documented as deprecated since Python 2.5.  Removed
->                   in Python 2.6.
+>                    in Python 2.6.
 
 There's also a reference gopher client in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
