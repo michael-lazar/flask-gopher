@@ -1,0 +1,6 @@
+{{ menu.submenu('Home', url_for('index')) }}
+
+{% block body %}{% endblock %}
+
+{{ '_' * gopher.width }}
+{{ session.get('id', '') | float_right('Served by ' + request.environ['SERVER_SOFTWARE']) }}

@@ -1,0 +1,26 @@
+{% extends "layout.gopher" %}
+{% block body %}
+{{ '=' * 80 }}
+{{ ' ' | banner(ch='') }}
+{{ 'Flask-Gopher' | figlet(font='stampatello') | banner(ch='') }}
+{{ ' ' | banner(ch='') }}
+{{ 'A Python Flask Extension for the Gopher Protocol' | banner(ch='') }}
+{{ ' ' | banner(ch='') }}
+{{ '=' * 80 }}
+
+{{ gopher.url_for('index', _external=True) | center }}
+
+This page is an interactive demonstration of Flask-Gopher, a python
+extension that turns the Flask web framework into a capable gopher
+server!
+
+This page's source code is open source and available for download at:
+{{ menu.html('Flask-Gopher on Github', 'http://github.com/michael-lazar/flask-gopher') }}
+
+{{ 'Tech Demos' | underline('-') }}
+{{ menu.submenu('Menu Link Gallery', url_for('demo_links')) }}
+{{ menu.submenu('Text Formatting Gallery', url_for('demo_formatting')) }}
+{{ menu.submenu('Error Handling Gallery', url_for('demo_errors')) }}
+{{ menu.submenu('Interactive Forms', url_for('demo_form')) }}
+{{ menu.submenu('Client Sessions', url_for('demo_session')) }}
+{% endblock %}

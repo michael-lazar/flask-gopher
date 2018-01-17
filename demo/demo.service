@@ -1,0 +1,11 @@
+[Unit]
+Description=Demo Flask-Gopher server
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStart=/path/to/run_server.py
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,14 @@
+{% extends "layout.gopher" %}
+{% block body %}
+This is an example of an HTML style multi-part form that uses strict
+gopher RFC 1436. Form fields are input using regular gopher searches
+and are saved in the page's URL query string.
+
+Submitting the form on this page won't actually do anything, so feel
+free to play around with it!
+
+{{ '=' * 12 }}
+{{ 'Example Form' }}
+{{ '=' * 12 }}
+{{ form }}
+{% endblock %}

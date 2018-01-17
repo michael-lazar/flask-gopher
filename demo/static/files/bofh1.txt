@@ -1,0 +1,89 @@
+It's backup day today so I'm pissed off. Being the BOFH, however, does have it's advantages. I reassign null to be the tape device - it's so much more economical on my time as I don't have to keep getting up to change tapes every 5 minutes. And it speeds up backups too, so it can't be all bad can it? Of course not.
+
+A user rings
+
+"Do you know why the system is slow?" they ask
+
+"It's probably something to do with..." I look up today's excuse ".. clock speed"
+
+"Oh" (Not knowing what I'm talking about, they're satisfied) "Do you know when it will be fixed?"
+
+"Fixed? There's 275 users on your machine, and one of them is you. Don't be so selfish - logout now and give someone else a chance!"
+
+"But my research results are due in tommorrow and all I need is one page of Laser Print.."
+
+"SURE YOU DO. Well, you just keep telling yourself that buddy!" I hang up.
+
+You'd really think people would learn not to call..
+
+The phone rings. It'll be him again, I know. That annoys me. I put on a gruff voice
+
+"HELLO, SALARIES!"
+
+"Oh, I'm sorry, I've got the wrong number"
+
+"YEAH? Well what's your name buddy? Do you know WASTED phone calls cost money? DO YOU? I've got a good mind to subtract your wasted time, my wasted time, and the cost of this call from your weekly wages! IN FACT I WILL! By the time I've finished with you, YOU'LL OWE US money! WHAT'S YOUR NAME - AND DON'T LIE, WE'VE GOT CALLER ID!!"
+
+I hear the phone drop and the sound of running feet - he's obviously going to try and get an alibi by being at the Dean's office. I look up his username and find his department. I ring the Dean's secretary.
+
+"Hello?" she answers
+
+"Hi, SIMON, B.O.F.H. HERE, LISTEN, WHEN THAT GUY COMES RUNNING INTO YOUR OFFICE IN ABOUT 10 SECONDS, CAN YOU GIVE HIM A MESSAGE?"
+
+"I think so..." she says
+
+"TELL HIM `HE CAN RUN, BUT HE CAN'T HIDE'"
+
+"Um. Ok"
+
+"AND DON'T FORGET NOW, I WOULDN'T WANT TO HAVE TO TELL ANYONE ABOUT THAT FILE IN YOUR ACCOUNT WITH YOUR ANSWERS TO THE PURITY TEST IN IT..."
+
+I hear her scrabbling at the terminal...
+
+"DON'T BOTHER - I HAVE A COPY. BE A GOOD PERVY AND PASS THE MESSAGE ON.."
+
+She sobs her assent and I hang up. And the worst thing is, I was just guessing about the purity test thing. I grab a quick copy anyway, it might make for some good late-night reading.
+
+Meantime backups have finished in record time, 2.03 seconds. Modern technology is wonderful, isn't it?
+
+Another user rings.
+
+"I need more space" he says
+
+"Well, why not move to Texas?" I ask
+
+"No, on my account, stupid."
+
+Stupid? Uh-Oh..
+
+"I'm terribly sorry" I say, in a polite manner equal to that of Jimmy Stewart in a Weekend Family Matine Feature "I didn't quite catch that. What was it that you said?"
+
+I smell the fear coming down the line at me, but it's too late, he's a goner and he knows it.
+
+"Um, I said what I wanted was more space on my account, *please*"
+
+"Sure, hang on"
+
+I hear him gasp his relief even though he'd covered the mouthpeice.
+
+"There, you've got *plenty* of space now!"
+
+"How much have I got?" he simps
+
+Now this *REALLY* *PISSES* *ME* *OFF*! Not only do they want me to give them extra space, they want to check it, then correct me if I don't give them enough! They should be happy with what I give them *and that's it*!
+
+Back into Jimmy Stewart mode.
+
+"Well, let's see, you have 4 Meg available"
+
+"Wow! Eight Meg in total, thanks!" he says, pleased with his bargaining power
+
+"No" I interrupt, savouring this like a fine red at room temperature, with steak, extra rare, to follow; "4 Meg in total.."
+
+"Huh? I'd used 4 Meg already, How could I have 4 Meg Available?"
+
+I say nothing. It'll come to him.
+
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagggggghhhhhH!"
+
+I kill me; I really do!

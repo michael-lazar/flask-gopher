@@ -1,0 +1,115 @@
+{% extends "layout.gopher" %}
+{% block body %}
+{{ 'Text Formatting Gallery' | banner(width=27)  | center }}
+
+
+
+{{ 'left' | ljust }}
+{{ 'center' | center }}
+{{ 'right' | rjust }}
+
+
+
+{{ 'left' | ljust(fillchar='_') }}
+{{ 'center' | center(fillchar='_') }}
+{{ 'right' | rjust(fillchar='_') }}
+
+
+
+{{ 'float left' | float_right('float right', fillchar='_') }}
+
+
+
+{{ 'float left line 1\nfloat left line 2\nfloat left line 3' | float_right('float right line 1\nfloat right line 2', fillchar='_') }}
+
+
+
+{{ 'Wide Banner' | banner }}
+
+
+
+{{ 'Wide Banner - Custom Border' | banner(ch='-', side='|') }}
+
+
+
+{{ 'Wide Banner - Sides Only' | banner(ch='') }}
+
+
+
+{{ 'Short Banner' | banner(width=16) | center }}
+
+
+
+{{ 'Banner Spanning\nMultiple Lines' | banner(width=25) | center }}
+
+
+
+{{ 'This sentence has been underlined' | underline }}
+
+
+
+{{ 'This sentence has been underlined with dashes' | underline('- ') }}
+
+
+
+{{ 'This sentence has been uppercased' | upper }}
+
+
+
+{{ 'This sentence has been titlecased' | title }}
+
+
+
+{{ 'WideText' | join(' ') }}
+
+
+
+{{ 'StarText' | join('*') }}
+
+
+
+{{ 'This paragraph has\nbeen indented\nby 4 spaces' | wrap(indent='    ') }}
+
+
+
+{{ 'This paragraph has\nbeen formatted as\na block quote' | wrap(indent='> ') }}
+
+
+
+Chain Link
+{{ '=-' * gopher.width  }}
+
+
+
+Dashed
+{{ '- ' * gopher.width  }}
+
+
+
+Fancy
+{{ '.-`-' * gopher.width }}
+
+
+
+
+{{ 'Figlet' | figlet(font='amcaaa01') }}
+
+
+
+{{ 'Coca\nCola' | figlet(font='cola', justify='center') }}
+
+Figlet engine powered by the pyfiglet library
+{{ menu.query('Enter text and preview it in 500+ fonts!', url_for('figlet')) }}
+
+
+{{ 'ASCII table generation' | center }}
+
+{{ tabulate(table_data, headers='firstrow', tablefmt='grid') | center}}
+
+Table engine powered by the tabulate library
+{{ menu.submenu('View all table styles', url_for('tables')) }}
+
+
+
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "layout.gopher" %}
+{% block body %}
+This is an example of how to store session data as a URL query
+parameter. The session is signed using an HMAC SHA-1 algorithm.
+
+Use the following query to initialize a session
+{{ menu.query('Enter a username', url_for('demo_session', action='create')) }}
+
+{{ session }}
+{{ menu.submenu('Clear session', url_for('demo_session', action='delete')) }}
+
+{% if action == 'create' %}
+Your session has been initialized, you should see your name in the
+bottom left of the page. From this page, any link that you click
+on will contain your session information. Try navigating back to
+the "Home" directory using the link at the top of the page.
+{% endif %}
+{% endblock %}

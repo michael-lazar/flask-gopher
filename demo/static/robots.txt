@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /demo-date
+Disallow: /demo-wsgi
+Disallow: /render-figlet
+Disallow: /render-tables
