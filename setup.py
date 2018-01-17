@@ -4,11 +4,17 @@ Flask-Gopher
 
 A Flask extension to support the Gopher Protocol
 """
-from setuptools import setup
+import codecs
+import setuptools
 from version import __version__ as version
 
 
-setup(
+def long_description():
+    with codecs.open('README.md', encoding='utf8') as f:
+        return f.read()
+
+
+setuptools.setup(
     name='Flask-Gopher',
     version=version,
     url='https://github.com/michael-lazar/flask-gopher',
@@ -16,7 +22,7 @@ setup(
     author='Michael Lazar',
     author_email='lazar.michael22@gmail.com',
     description='A Flask extension to support the Gopher Protocol',
-    long_description=__doc__,
+    long_description=long_description(),
     packages=['flask_gopher'],
     zip_safe=False,
     include_package_data=True,
