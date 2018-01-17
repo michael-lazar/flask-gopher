@@ -22,7 +22,9 @@ setup(
     include_package_data=True,
     platforms='any',
     install_requires=[
-        'Flask'
+        'Flask',
+        'pyfiglet',
+        'tabulate'
     ],
     test_suite='tests',
     classifiers=[

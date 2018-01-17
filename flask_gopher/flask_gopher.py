@@ -1,31 +1,192 @@
 import re
+import os
 import weakref
 import textwrap
-from functools import partialmethod, wraps
+import traceback
+from itertools import zip_longest
+from functools import partialmethod
+from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 
-from flask import request, make_response, render_template, current_app, url_for
-from flask import _app_ctx_stack as stack
+from pyfiglet import figlet_format, FigletError
+from tabulate import tabulate
+from flask import _request_ctx_stack as request_ctx_stack
+from flask import request, render_template, current_app, url_for
+from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
+from werkzeug.local import LocalProxy
 from werkzeug.urls import url_quote
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.exceptions import HTTPException
+from itsdangerous import URLSafeSerializer, BadSignature
+
 from .__version__ import __version__
 
 
-def _add_menu_func(method):
+@LocalProxy
+def menu():
     """
-    Helper wrapper to add GopherMenu methods to the Gopher class.
+    Shortcut for gopher.menu
     """
-    @wraps(method)
-    def wrapped(self, *args, **kwargs):
-        return method(self.menu, *args, **kwargs)
-    return wrapped
+    return current_app.extensions['gopher'].menu
 
 
-class GopherMenu(object):
+def render_menu(*lines):
     """
-    This class handles text formatting for Gopher menu lines.
+    Shortcut for gopher.render_menu
+    """
+    return current_app.extensions['gopher'].render_menu(*lines)
 
-    A menu item (type 1) has the following format:
+
+def render_menu_template(template_name, **context):
+    """
+    Shortcut for gopher.render_menu_template
+    """
+    return current_app.extensions['gopher'].render_menu_template(template_name, **context)
+
+
+class TextFormatter:
+    """
+    Helper methods for applying formatting techniques to gopher menu text.
+    """
+
+    def __init__(self, default_width=70):
+        self.default_width = default_width
+
+    def banner(self, text, ch='=', side='-', width=None):
+        """
+        Surrounds the text with an ascii banner:
+
+            ========================================
+            -             Hello World!             -
+            ========================================
+        """
+        width = width or self.default_width
+        offset = len(side)
+        lines = []
+        for line in text.splitlines():
+            if side:
+                lines.append(side + line.center(width)[offset:-offset] + side)
+            else:
+                lines.append(line.center(width))
+        if ch:
+            # Add the top & bottom
+            top = bottom = (ch * width)[:width]
+            lines = [top] + lines + [bottom]
+        return '\r\n'.join(lines)
+
+    def wrap(self, text, indent='', width=None):
+        """
+        Wraps a block of text into a paragraph that fits the width of the page
+        """
+        width = width or self.default_width
+        wrapper = textwrap.TextWrapper(
+            width=width,
+            initial_indent=indent,
+            subsequent_indent=indent,
+            expand_tabs=False,
+            replace_whitespace=False,
+            drop_whitespace=True)
+        lines = text.splitlines()
+        return '\r\n'.join(wrapper.fill(line) for line in lines)
+
+    def center(self, text, fillchar=' ', width=None):
+        """
+        Centers a block of text.
+        """
+        width = width or self.default_width
+        lines = text.splitlines()
+        return '\r\n'.join(line.center(width, fillchar) for line in lines)
+
+    def rjust(self, text, fillchar=' ', width=None):
+        """
+        Right-justifies a block of text.
+        """
+        width = width or self.default_width
+        lines = text.splitlines()
+        return '\r\n'.join(line.rjust(width, fillchar) for line in lines)
+
+    def ljust(self, text, fillchar=' ', width=None):
+        """
+        Left-justifies a block of text.
+        """
+        width = width or self.default_width
+        lines = text.splitlines()
+        return '\r\n'.join(line.ljust(width, fillchar) for line in lines)
+
+    def float_right(self, text_left, text_right, fillchar=' ', width=None):
+        """
+        Left-justifies text, and then overlays right justified text on top
+        of it. This gives the effect of having a floating div on both
+        sides of the screen.
+        """
+        width = width or self.default_width
+        left_lines = text_left.splitlines()
+        right_lines = text_right.splitlines()
+
+        lines = []
+        for left, right in zip_longest(left_lines, right_lines, fillvalue=''):
+            padding = width - len(right)
+            line = (left.ljust(padding, fillchar) + right)[-width:]
+            lines.append(line)
+        return '\r\n'.join(lines)
+
+    def figlet(self, text, width=None, font='normal', justify='auto', **kwargs):
+        """
+        Renders the given text using the pyfiglet engine. See the pyfiglet
+        package for more information on available fonts and options. There's
+        also a  command line client (pyfiglet) that you can use to test out
+        different fonts. There are over 500 of them!
+
+        Options:
+            font (str): The figlet font to use, see pyfiglet for choices
+            direction (str): auto, left-to-right, right-to-left
+            justify (str): auto, left, right, center
+        """
+        width = width or self.default_width
+        try:
+            text = figlet_format(text, font, width=width, justify=justify, **kwargs)
+        except FigletError:
+            # Could be that the character is too large for the width of the
+            # screen, or some other figlet rendering error. Fall back to using
+            # the bare text that the user supplied.
+            pass
+
+        if justify == 'center':
+            text = self.center(text, width=width)
+        elif justify == 'right':
+            text = self.rjust(text, width=width)
+        return text
+
+    def tabulate(self, tabular_data, headers=(), tablefmt="simple", **kwargs):
+        """
+        Renders the given data into an ascii table using tabulate.
+
+        See the tabulate package for more information on available options.
+        """
+        text = tabulate(tabular_data, headers, tablefmt, **kwargs)
+
+        # Add whitespace to make each line in the table the same length
+        # This allows it to be centered / right aligned
+        lines = text.splitlines()
+        width = max(len(line) for line in lines)
+        return '\r\n'.join([line.ljust(width) for line in lines])
+
+    @staticmethod
+    def underline(text, ch='_'):
+        """
+        Adds an underline to a block of text
+
+        The width of the underline will match the width of the text.
+        """
+        width = max(len(line) for line in text.splitlines())
+        underline = (ch * width)[:width]
+        return '\r\n'.join([text, underline])
+
+
+class GopherMenu:
+    """
+    Helper methods for rendering gopher menu lines.
+
+    A menu line has the following format:
         T<itemtext><TAB><selector><TAB><host><TAB><port><CR><LF>
 
     Where:
@@ -94,7 +255,6 @@ class GopherMenu(object):
 
         return self.TEMPLATE.format(type_code, text, selector, host, port)
 
-    # Most of the selectors follow the same standard format
     file = partialmethod(entry, '0')
     submenu = partialmethod(entry, '1')
     ccso = partialmethod(entry, '2')
@@ -109,8 +269,6 @@ class GopherMenu(object):
     doc = partialmethod(entry, 'd')
     sound = partialmethod(entry, 's')
     video = partialmethod(entry, ';')
-
-    # info has special placeholder values for the host/port
     info = partialmethod(entry, 'i', selector='fake', host='example.com', port=0)
 
     def html(self, text, url):
@@ -173,65 +331,86 @@ class GopherMenu(object):
         of the error in both English and the local language.
         """
 
-        # This doesn't seem to work in Lynx, so I'm using a plain text message
+        # The error spec doesn't seem to work in Lynx, so I'm using plain text
         # return self.entry('3', error_code, message, 'example.com', 0)
         return 'Error: {} {}'.format(error_code, message)
 
 
 class GopherExtension:
+    """
+    This main gopher extension.
+    """
 
     # https://tools.ietf.org/id/draft-matavka-gopher-ii-03.html#rfc.section.11
     URL_REDIRECT_TEMPLATE = """
-    <HTML>
-    <HEAD>
-    <META HTTP-EQUIV="refresh" content="2;URL={url}"> 
-    </HEAD>
-    <BODY>
+        <HTML>
+        <HEAD>
+        <META HTTP-EQUIV="refresh" content="2;URL={url}"> 
+        </HEAD>
+        <BODY>
+    
+        You are following an external link to a Web site. You will be automatically
+        taken to the site shortly. If you do not get sent there, please click
+        <A HREF="{url}">here</A> to go to the web site. 
+        <P> 
+        The URL linked is:{url}> 
+        <P> 
+        <A HREF="{url}">{url}</A> 
+        <P> 
+        Thanks for using Gopher! 
+        </BODY> 
+        </HTML>
+        """
 
-    You are following an external link to a Web site. You will be automatically
-    taken to the site shortly. If you do not get sent there, please click
-    <A HREF="{url}">here</A> to go to the web site. 
-    <P> 
-    The URL linked is:{url}> 
-    <P> 
-    <A HREF="{url}">{url}</A> 
-    <P> 
-    Thanks for using Gopher! 
-    </BODY> 
-    </HTML>
-    """
-
-    def __init__(self, app=None):
+    def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
         self.width = None
-        self.text_wrap = None
+        self.show_stack_trace = None
+
+        self.formatter = None
+
+        self.menu_class = menu_class
+        self.formatter_class = formatter_class
 
         self.app = app
         if app is not None:
-            self._init_app(app)
+            self.init_app(app)
 
-    def _init_app(self, app):
+    def init_app(self, app):
         self.width = app.config.setdefault('GOPHER_WIDTH', 70)
-        self.text_wrap = textwrap.TextWrapper(self.width)
+        self.show_stack_trace = app.config.setdefault('GOPHER_SHOW_STACK_TRACE', False)
 
-        app.jinja_env.trim_blocks = True
-        app.jinja_env.lstrip_blocks = False
+        self.formatter = self.formatter_class(self.width)
 
         self._add_gopher_jinja_methods(app)
         self._add_gopher_url_redirect(app)
         self._add_gopher_error_handler(app)
 
         app.extensions['gopher'] = weakref.proxy(self)
+        app.session_interface = GopherSessionInterface()
 
     def _add_gopher_jinja_methods(self, app):
         """
-        Make this class object accessible to the jinja template engine.
+        Add the gopher helpers to the default jinja template environment.
         """
+        app.jinja_env.trim_blocks = True
+        app.jinja_env.lstrip_blocks = False
+
         @app.context_processor
         def add_context():
-            return {'gopher': self}
+            return {
+                'gopher': self,
+                'menu': menu,
+                'tabulate': self.formatter.tabulate
+            }
 
-        app.add_template_filter(lambda s: s.rjust(self.width), 'rjust')
-        app.add_template_filter(lambda s: s.center(self.width), 'center')
+        app.add_template_filter(self.formatter.wrap, 'wrap')
+        app.add_template_filter(self.formatter.rjust, 'rjust')
+        app.add_template_filter(self.formatter.ljust, 'ljust')
+        app.add_template_filter(self.formatter.center, 'center')
+        app.add_template_filter(self.formatter.banner, 'banner')
+        app.add_template_filter(self.formatter.figlet, 'figlet')
+        app.add_template_filter(self.formatter.underline, 'underline')
+        app.add_template_filter(self.formatter.float_right, 'float_right')
 
     def _add_gopher_url_redirect(self, app):
         """
@@ -250,53 +429,51 @@ class GopherExtension:
     def _add_gopher_error_handler(self, app):
         """
         Intercept all errors for GOPHER requests and replace the default
-        HTML document with a gopher compatible menu document.
+        HTML error document with a gopher compatible text document.
         """
-
-        # https://stackoverflow.com/a/41655397
         def handle_error(error):
-            if request.scheme == 'gopher':
-                if isinstance(error, HTTPException):
-                    body = [self.error(error.code, error.name), '']
-                    body += self.text_wrap.wrap(error.description)
-                    return self.render_menu(*body), error.code
-                else:
-                    body = self.menu.error(500, 'Internal Error')
-                    return self.render_menu(body), 500
-            return error
+            if request.scheme != 'gopher':
+                # Pass through the error to the default handler
+                return error
 
+            code = getattr(error, 'code', 500)
+            name = getattr(error, 'name', 'Internal Server Error')
+            desc = getattr(error, 'description', None)
+            if desc is None and self.show_stack_trace:
+                desc = traceback.format_exc()
+            elif desc is None:
+                desc = 'An internal error has occurred'
+            body = [menu.error(code, name), '', self.formatter.wrap(desc)]
+
+            # There's no way to know if the client has requested a gopher
+            # menu, a text file, or a binary file. But we can make a guess
+            # based on if the request path has a file extension at the end.
+            ext = os.path.splitext(request.path)[1]
+            if ext:
+                return '\r\n'.join(body)
+            else:
+                return self.render_menu(*body)
+
+        # Attach this handler to all of the builtin flask exceptions
         for cls in HTTPException.__subclasses__():
             app.register_error_handler(cls, handle_error)
 
     @property
     def menu(self):
-        ctx = stack.top
+        """
+        The current active instance of the GopherMenu class.
+
+        This variable is instantiated on the request context so that it can be
+        initialized with the same host/port that the request's url_adapter is
+        using.
+        """
+        ctx = request_ctx_stack.top
         if ctx is not None:
             if not hasattr(ctx, 'gopher_menu'):
                 host = request.environ['SERVER_NAME']
                 port = request.environ['SERVER_PORT']
-                ctx.gopher_menu = GopherMenu(host, port)
+                ctx.gopher_menu = self.menu_class(host, port)
             return ctx.gopher_menu
-
-    # Add shortcuts for all of the GopherMenu types
-    file = _add_menu_func(GopherMenu.file)
-    submenu = _add_menu_func(GopherMenu.submenu)
-    ccso = _add_menu_func(GopherMenu.ccso)
-    binhex = _add_menu_func(GopherMenu.binhex)
-    archive = _add_menu_func(GopherMenu.archive)
-    uuencoded = _add_menu_func(GopherMenu.uuencoded)
-    query = _add_menu_func(GopherMenu.query)
-    telnet = _add_menu_func(GopherMenu.telnet)
-    binary = _add_menu_func(GopherMenu.binary)
-    gif = _add_menu_func(GopherMenu.gif)
-    image = _add_menu_func(GopherMenu.image)
-    doc = _add_menu_func(GopherMenu.doc)
-    sound = _add_menu_func(GopherMenu.sound)
-    video = _add_menu_func(GopherMenu.video)
-    info = _add_menu_func(GopherMenu.info)
-    html = _add_menu_func(GopherMenu.html)
-    title = _add_menu_func(GopherMenu.title)
-    error = _add_menu_func(GopherMenu.error)
 
     def render_menu(self, *lines):
         """
@@ -340,7 +517,7 @@ class GopherExtension:
             line = line.rstrip()
             if not menu_line_pattern.match(line):
                 # The line is normal block of text, convert it to an INFO
-                line = self.info(line)
+                line = menu.info(line)
 
             # Unfortunately we need to re-parse every line to make sure that
             # display string is under the configured width. Add +1 to
@@ -364,37 +541,21 @@ class GopherExtension:
         template_string = render_template(template_name, **context)
         return self.render_menu(template_string)
 
-    @staticmethod
-    def url_for(endpoint, _external=False, _type=1, **values):
+    def url_for(self, endpoint, _external=False, _type=1, **values):
         """
         Injects the type into the beginning of the selector for external URLs.
 
             gopher://127.0.0.1:70/home => gopher://127.0.0.1:70/1/home
         """
         if not _external:
-            url = url_for(endpoint, **values)
-        else:
-            values['_scheme'] = 'gopher'
-            url = url_for(endpoint, _external=_external, **values)
-            parts = url.split('/')
-            parts.insert(3, str(_type))
-            url = '/'.join(parts)
+            return url_for(endpoint, **values)
+
+        values['_scheme'] = 'gopher'
+        url = url_for(endpoint, _external=_external, **values)
+        parts = url.split('/')
+        parts.insert(3, str(_type))
+        url = '/'.join(parts)
         return url
-
-
-def render_menu(*lines):
-    """
-    Alternate method
-    """
-    return current_app.extensions['gopher'].render_menu(*lines)
-
-
-def render_menu_template(template_name, **context):
-    """
-    Alternate method
-    """
-    method = current_app.extensions['gopher'].render_menu_template
-    return method(template_name, **context)
 
 
 class GopherRequestHandler(WSGIRequestHandler):
@@ -431,7 +592,7 @@ class GopherRequestHandler(WSGIRequestHandler):
 
         <selector><TAB><search><TAB><gopher+string><CR><LF>
 
-    The server responds to the client with a blob of text or bytes. Constrasted
+    The server responds to the client with a blob of text or bytes. Contrasted
     with HTTP, there is no status code, version string, or request headers.
     There are different rules for how the response body should be formatted
     depending on if the request was for a menu item, a text item, or a binary
@@ -469,6 +630,25 @@ class GopherRequestHandler(WSGIRequestHandler):
         if self.request_version == 'gopher':
             environ['wsgi.url_scheme'] = 'gopher'
             environ['SEARCH_TEXT'] = self.search_text
+
+            # Flask has a sanity check where if app.config['SERVER_NAME'] is
+            # defined, it has to match either the HTTP host header or the
+            # WSGI server's environ['SERVER_NAME']. With the werkzeug WSGI
+            # server, environ['SERVER_NAME'] is set to the bind address
+            # (e.g. 127.0.0.1) and it can't be configured. This means that
+            # if we want to set app.config['SERVER_NAME'] to an external IP
+            # address or domain name, we need to spoof either the HTTP_HOST
+            # header or the SERVER_NAME env variable to match it.
+            # Go look at werkzeug.routing.Map.bind_to_environ()
+            try:
+                server_name = self.server.app.config.get('SERVER_NAME')
+            except Exception:
+                pass
+            else:
+                if server_name:
+                    if ':' in server_name:
+                        environ['SERVER_PORT'] = server_name.split(':')[1]
+                    environ['SERVER_NAME'] = server_name.split(':')[0]
         return environ
 
     def parse_request(self):
@@ -500,3 +680,99 @@ class GopherRequestHandler(WSGIRequestHandler):
             self.path = '/' + self.path
         self.search_text = url_parts[1] if len(url_parts) > 1 else ''
         return True
+
+
+class GopherSessionInterface(SecureCookieSessionInterface):
+    """
+    This enables session handling in gopher via the flask.session variable.
+
+    Gopher doesn't have headers or cookies, so sessions are achieved using a
+    special `_session` URL query parameter. Gopher requests containing this
+    parameter will automatically have their session data loaded into flask.
+    Sessions are transmitted by parsing the response body of gopher menus and
+    inserting the _session param into any internal links.
+
+    The session string will be encrypted, but it will still be passed over
+    an insecure gopher connection. Don't use the session to store passwords
+    or other sensitive information. Try to store minimal data in the session to
+    avoid returning large and unwieldy URL's.
+    """
+
+    gopher_session_class = type('GopherSession', (SecureCookieSession,), {})
+
+    def get_gopher_signing_serializer(self, app):
+        """
+        This is almost the same serializer that the cookie session uses,
+        except that it doesn't set an `expiration` time for the session.
+        """
+        if not app.secret_key:
+            return None
+        signer_kwargs = dict(
+            key_derivation=self.key_derivation,
+            digest_method=self.digest_method)
+        return URLSafeSerializer(
+            app.secret_key,
+            salt=self.salt,
+            serializer=self.serializer,
+            signer_kwargs=signer_kwargs)
+
+    def open_session(self, app, request):
+        """
+        Load and decode the session from the request query string.
+        """
+        s = self.get_gopher_signing_serializer(app)
+        if not s:
+            return None
+        val = request.args.get('_session', None)
+        if not val:
+            return self.gopher_session_class()
+        try:
+            data = s.loads(val)
+            return self.gopher_session_class(data)
+        except BadSignature:
+            return self.gopher_session_class()
+
+    def save_session(self, app, session, response):
+        """
+        Normally the session is saved by adding a cookie header to the
+        response object. However, in this case, because were using a
+        query param we need to insert the session into every internal
+        link that's returned in the response body. Unfortunately there's
+        no easy way to do this, so for now I'm using a regex search
+        that looks for gopher internal menu links and appends the _session
+        query param to the end of each link selector.
+        """
+        if not session or response.direct_passthrough:
+            # Don't bother trying to save the session if there's nothing to save,
+            # or if the response is a static file or streaming file.
+            return None
+
+        s = self.get_gopher_signing_serializer(app)
+        session_str = s.dumps(dict(session))
+
+        # Build the regex pattern that searches for internal gopher menu links
+        host = request.environ['SERVER_NAME']
+        port = request.environ['SERVER_PORT']
+        url_pattern = '^(?P<type>[^i])(?P<desc>.+)\t(?P<selector>.*)\t%s\t%s\r$'
+        url_pattern = url_pattern % (re.escape(host), re.escape(port))
+
+        def on_match(matchobj):
+            """
+            This function is called on every regex match. It takes an
+            existing gopher link, extracts the path and the query string,
+            adds the _session param to it, and rebuilds the link.
+            """
+            url_parts = urlsplit(matchobj.group('selector'))
+            query = parse_qs(url_parts.query)
+            query['_session'] = [session_str]
+            new_query = urlencode(query, doseq=True)
+            new_url = urlunsplit([
+                url_parts.scheme, url_parts.netloc, url_parts.path,
+                new_query, url_parts.fragment])
+            new_line = '%s%s\t%s\t%s\t%s\r' % (
+                matchobj.group('type'), matchobj.group('desc'), new_url, host, port)
+            return new_line
+
+        data = bytes.decode(response.data)
+        new_data = re.sub(url_pattern, on_match, data, flags=re.M)
+        response.data = new_data.encode()
