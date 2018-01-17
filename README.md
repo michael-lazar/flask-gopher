@@ -47,9 +47,9 @@ gopher = GopherExtension(app)
 @app.route('/')
 def index():
     return gopher.render_menu(
-        gopher.title('My GopherHole'),
-        gopher.submenu('Home', url_for('index')),
-        gopher.info("Look Ma, it's a gopher server!"))
+        gopher.menu.title('My GopherHole'),
+        gopher.menu.submenu('Home', url_for('index')),
+        gopher.menu.info("Look Ma, it's a gopher server!"))
 
 if __name__ == '__main__':
    app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
@@ -109,24 +109,24 @@ Flask-Gopher provides several helper methods for constructing gopher menu lines:
 
 | Method        | Link Descriptor     | Meaning  |
 | ------------- | ------------------- | -------- |
-| gopher.file | 0 | Plain text file |
-| gopher.submenu | 1 | Gopher menu |
-| gopher.csso | 2 | CSSO database; other databases |
-| gopher.error | 3 | Error message |
-| gopher.binhex | 4 | Macintosh BinHex file |
-| gopher.archive | 5 | Archive file (zip, tar, gzip) |
-| gopher.uuencoded | 6 | UUEncoded file |
-| gopher.query | 7 | Search query |
-| gopher.telnet | 8 | Telnet session |
-| gopher.binary | 9 | Binary file |
-| gopher.gif | g | GIF format graphics file |
-| gopher.image | I | Other Image file |
-| gopher.doc | d | Word processing document (ps, pdf, doc) |
-| gopher.sound | s | Sound file |
-| gopher.video | ; | Video file |
-| gopher.info | i | Information line |
-| gopher.title | i | Title line |
-| gopher.html | h | HTML document |
+| menu.file | 0 | Plain text file |
+| menu.submenu | 1 | Gopher menu |
+| menu.ccso | 2 | CCSO database; other databases |
+| menu.error | 3 | Error message |
+| menu.binhex | 4 | Macintosh BinHex file |
+| menu.archive | 5 | Archive file (zip, tar, gzip) |
+| menu.uuencoded | 6 | UUEncoded file |
+| menu.query | 7 | Search query |
+| menu.telnet | 8 | Telnet session |
+| menu.binary | 9 | Binary file |
+| menu.gif | g | GIF format graphics file |
+| menu.image | I | Other Image file |
+| menu.doc | d | Word processing document (ps, pdf, doc) |
+| menu.sound | s | Sound file |
+| menu.video | ; | Video file |
+| menu.info | i | Information line |
+| menu.title | i | Title line |
+| menu.html | h | HTML document |
 
 Most of these methods require a text description for the link, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines along into ``gopher.render_menu()`` to build the response body.
 
@@ -135,19 +135,19 @@ Most of these methods require a text description for the link, and will accept a
 def index():
     return gopher.render_menu(
         # Link to an internal gopher menu
-        gopher.submenu('Home', '/'),
+        gopher.menu.submenu('Home', '/'),
         
         # Link to an external gopher menu
-        gopher.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
+        gopher.menu.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
         
         # Link to a static file, using flask.url_for() to build a relative path
-        gopher.image('Picture of a cat', url_for('static', filename='cat.png')),
+        gopher.menu.image('Picture of a cat', url_for('static', filename='cat.png')),
         
         # Link to an external web page
-        gopher.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
+        gopher.menu.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
         
         # Info lines display text in the menu
-        gopher.info('This is informational text'),
+        gopher.menu.info('This is informational text'),
 
         # Plain text will be converted into info lines
         "\n    There's no place\n    like ::1\n",
@@ -185,7 +185,7 @@ You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gophe
 {{ 'Centered Title' | center }}
 {{ '--------------' | center }}
 
-{{ gopher.submenu('Home', url_for('index')) }}
+{{ gopher.menu.submenu('Home', url_for('index')) }}
 
 Hello from my gopher template!
 Your IP address is {{ request.remote_addr }}
