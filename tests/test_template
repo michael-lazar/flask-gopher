@@ -1,0 +1,6 @@
+{{ 'Title' | rjust }}
+{{ gopher.url_for('menu_route', _external=True) }}
+{{ menu.submenu('Home', url_for('menu_route')) }}
+{% for item in items -%}
+{{ item }}
+{% endfor %}

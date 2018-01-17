@@ -1,6 +1,0 @@
-{{ 'Title' | rjust }}
-{{ gopher.url_for('menu', _external=True) }}
-{{ gopher.submenu('Home', url_for('menu')) }}
-{% for item in items -%}
-{{ item }}
-{% endfor %}
