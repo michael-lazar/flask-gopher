@@ -182,8 +182,7 @@ You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gophe
 
 **templates/example_menu.gopher**
 ```
-{{ 'Centered Title' | center }}
-{{ '--------------' | center }}
+{{ 'Centered Title' | underline('-') | center }}
 
 {{ gopher.menu.submenu('Home', url_for('index')) }}
 
