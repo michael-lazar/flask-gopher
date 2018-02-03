@@ -27,7 +27,7 @@ This extension works by adding a thin **Gopher => HTTP** compatability layer int
 
 ## Installation
 
-This package requires **python 3**
+This package requires **python 3+**
 
 ```
 pip install flask_gopher
