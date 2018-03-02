@@ -616,22 +616,18 @@ class GopherRequestHandler(WSGIRequestHandler):
         first byte sent by the client is an SYN, which indicates the start
         of an SSL handshake.
         """
-        self.secure = False
         if not self.server.ssl_context:
             return super().setup()
-
         elif isinstance(self.request, ssl.SSLSocket):
-            self.secure = True
             return super().setup()
 
-        # Read the first byte without removing it from the buffer
+        # Check the first byte without removing it from the buffer
         char = self.request.recv(1, socket.MSG_PEEK)
-        if char == b'\x16':  # SYN
-            # Wrapping the socket will perform the handshake immediately
+        if char == b'\x16':
+            # It's a SYN byte, so assume the client is trying to establish SSL
             ssl_socket = self.server.ssl_context.wrap_socket(
                 self.request, server_side=True, defer=False)
             self.request = ssl_socket
-            self.secure = True
 
         return super().setup()
 
@@ -657,7 +653,7 @@ class GopherRequestHandler(WSGIRequestHandler):
         if self.request_version == 'gopher':
             environ['wsgi.url_scheme'] = 'gopher'
             environ['SEARCH_TEXT'] = self.search_text
-            environ['SECURE'] = self.secure
+            environ['SECURE'] = isinstance(self.request, ssl.SSLSocket)
 
             # Flask has a sanity check where if app.config['SERVER_NAME'] is
             # defined, it has to match either the HTTP host header or the
@@ -708,8 +704,8 @@ class GopherRequestHandler(WSGIRequestHandler):
             self.path = '/' + self.path
         self.search_text = url_parts[1] if len(url_parts) > 1 else ''
 
-        # Add SSL to requestline so it gets printed in the log
-        if self.secure:
+        # Add a token to the requestline for server logging
+        if isinstance(self.request, ssl.SSLSocket):
             self.requestline = '<SSL> ' + self.requestline
 
         return True
