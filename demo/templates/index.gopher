@@ -23,4 +23,6 @@ This page's source code is open source and available for download at:
 {{ menu.submenu('Error Handling Gallery', url_for('demo_errors')) }}
 {{ menu.submenu('Interactive Forms', url_for('demo_form')) }}
 {{ menu.submenu('Client Sessions', url_for('demo_session')) }}
+{{ menu.submenu('SSL Encryption', url_for('demo_ssl')) }}
+
 {% endblock %}

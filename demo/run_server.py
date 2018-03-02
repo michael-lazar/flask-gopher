@@ -22,6 +22,7 @@ from collections import OrderedDict
 from tabulate import tabulate_formats
 from pyfiglet import FigletFont
 from flask import Flask, request, abort, url_for, session
+from flask_gopher import load_gopher_ssl_context
 from flask_gopher import GopherRequestHandler, GopherExtension
 
 ROOT_DIR = os.path.dirname(__file__)
@@ -115,6 +116,12 @@ def demo_formatting():
     return gopher.render_menu_template('demo_formatting.gopher', table_data=table_data)
 
 
+@app.route('/demo-ssl')
+def demo_ssl():
+    secure = request.environ['SECURE']
+    return gopher.render_menu_template('demo_ssl.gopher', secure=secure)
+
+
 @app.route('/demo-form', defaults={'field': None})
 @app.route('/demo-form/<field>')
 def demo_form(field):
@@ -163,9 +170,18 @@ def demo_form(field):
 
 
 if __name__ == '__main__':
+
+    if app.config.get('SSL_CERTIFICATE_FILE'):
+        ssl_context = load_gopher_ssl_context(
+            app.config['SSL_CERTIFICATE_FILE'],
+            app.config['SSL_CERTIFICATE_KEY_FILE'])
+    else:
+        ssl_context = None
+
     app.run(
         host=app.config['HOST'],
         port=app.config['PORT'],
         threaded=app.config['THREADED'],
         processes=app.config['PROCESSES'],
+        ssl_context=ssl_context,
         request_handler=GopherRequestHandler)

@@ -1,5 +1,7 @@
 import re
 import os
+import ssl
+import socket
 import weakref
 import textwrap
 import traceback
@@ -14,7 +16,7 @@ from flask import request, render_template, current_app, url_for
 from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
 from werkzeug.local import LocalProxy
 from werkzeug.urls import url_quote
-from werkzeug.serving import WSGIRequestHandler
+from werkzeug.serving import WSGIRequestHandler, _SSLContext
 from werkzeug.exceptions import HTTPException
 from itsdangerous import URLSafeSerializer, BadSignature
 
@@ -608,6 +610,31 @@ class GopherRequestHandler(WSGIRequestHandler):
     def server_version(self):
         return 'Flask-Gopher/' + __version__
 
+    def setup(self):
+        """
+        Apply optional SSL wrapping of the connection by checking if the
+        first byte sent by the client is an SYN, which indicates the start
+        of an SSL handshake.
+        """
+        self.secure = False
+        if not self.server.ssl_context:
+            return super().setup()
+
+        elif isinstance(self.request, ssl.SSLSocket):
+            self.secure = True
+            return super().setup()
+
+        # Read the first byte without removing it from the buffer
+        char = self.request.recv(1, socket.MSG_PEEK)
+        if char == b'\x16':  # SYN
+            # Wrapping the socket will perform the handshake immediately
+            ssl_socket = self.server.ssl_context.wrap_socket(
+                self.request, server_side=True, defer=False)
+            self.request = ssl_socket
+            self.secure = True
+
+        return super().setup()
+
     def send_header(self, keyword, value):
         if self.request_version != 'gopher':
             return super().send_header(keyword, value)
@@ -630,6 +657,7 @@ class GopherRequestHandler(WSGIRequestHandler):
         if self.request_version == 'gopher':
             environ['wsgi.url_scheme'] = 'gopher'
             environ['SEARCH_TEXT'] = self.search_text
+            environ['SECURE'] = self.secure
 
             # Flask has a sanity check where if app.config['SERVER_NAME'] is
             # defined, it has to match either the HTTP host header or the
@@ -679,6 +707,11 @@ class GopherRequestHandler(WSGIRequestHandler):
             # the werkzeug router does!
             self.path = '/' + self.path
         self.search_text = url_parts[1] if len(url_parts) > 1 else ''
+
+        # Add SSL to requestline so it gets printed in the log
+        if self.secure:
+            self.requestline = '<SSL> ' + self.requestline
+
         return True
 
 
@@ -776,3 +809,31 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         data = bytes.decode(response.data)
         new_data = re.sub(url_pattern, on_match, data, flags=re.M)
         response.data = new_data.encode()
+
+
+class GopherSSLContext(_SSLContext):
+    """
+    This class gives the GopherRequestHandler the capability to selectively
+    apply SSL on a per-request basis, instead of wrapping the entire
+    server socket in the SSL context by default.
+    """
+
+    def wrap_socket(self, sock, defer=True, **kwargs):
+        if defer:
+            # Prevents the werkzeug server's default behavior of
+            # wrapping the server socket with SSL before a connection
+            # is established
+            return sock
+        else:
+            return super().wrap_socket(sock, **kwargs)
+
+    @classmethod
+    def load_ssl_context(cls, cert_file, pkey_file=None, protocol=None):
+        if protocol is None:
+            protocol = ssl.PROTOCOL_SSLv23
+        ctx = cls(protocol)
+        ctx.load_cert_chain(cert_file, pkey_file)
+        return ctx
+
+
+load_gopher_ssl_context = GopherSSLContext.load_ssl_context
