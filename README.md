@@ -25,6 +25,18 @@ Gopher is an alternative to the World Wide Web that peaked in popularity in the 
 
 This extension works by adding a thin **Gopher => HTTP** compatability layer into Flask's WSGI server. It turns gopher requests into pseudo-HTTP GET requests so they can be handled by Flask (or any other python WSGI app) natively. This means that you get full access to Flask's routing, templating engine, debugger, extensions, and other tools.
 
+## Demo
+
+A live demonstration of the Flask-Gopher server is available in gopherspace at the following URL
+
+---
+
+<p align="center">
+<b><a href="gopher://mozz.us:7005">gopher://mozz.us:7005</a></b><br>
+</p>
+
+---
+
 ## Installation
 
 This package requires **Python v3.4 or higher**
