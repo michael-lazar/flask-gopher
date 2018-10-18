@@ -48,7 +48,7 @@ pip install flask_gopher
 ## Quickstart
 
 ```python
-from flask import Flask
+from flask import Flask, url_for
 from flask_gopher import GopherExtension, GopherRequestHandler
 
 app = Flask(__name__)
