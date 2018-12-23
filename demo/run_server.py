@@ -40,9 +40,9 @@ def index():
 @app.route('/render-figlet')
 def figlet():
     """
-    Renders the search text using all possible figlet fonts.
+    Render the search text using all possible figlet fonts.
 
-    This may take a few seconds to return.
+    This loops through hundreds of fonts and may take a few seconds to return.
     """
     text = request.environ['SEARCH_TEXT']
     lines = []
@@ -56,7 +56,7 @@ def figlet():
 @app.route('/render-tables')
 def tables():
     """
-    Renders an ascii table using all possible styles.
+    Render an ascii table using all possible styles provided by tabulate.
     """
     data = [
         ('text', 'int', 'float'),
@@ -79,8 +79,10 @@ def error(code, path):
     Endpoint that simulates error behavior for different types of files.
     """
     if code == 500:
+        # Will raise a divide by zero error with a stack trace
         return 1 // 0
     else:
+        # Return the specified error code through flask
         abort(code)
 
 
