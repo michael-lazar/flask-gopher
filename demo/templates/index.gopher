@@ -4,7 +4,7 @@
 {{ ' ' | banner(ch='') }}
 {{ 'Flask-Gopher' | figlet(font='stampatello') | banner(ch='') }}
 {{ ' ' | banner(ch='') }}
-{{ 'A Python Flask Extension for the Gopher Protocol' | banner(ch='') }}
+{{ 'Modern Gopher Software' | banner(ch='') }}
 {{ ' ' | banner(ch='') }}
 {{ '=' * 80 }}
 

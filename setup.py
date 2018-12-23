@@ -29,7 +29,8 @@ setuptools.setup(
     platforms='any',
     install_requires=[
         'Flask',
-        'pyfiglet',
+        # pyfiglet v0.8.0 removes a bunch of fonts because of licensing issues
+        'pyfiglet<=0.7.6',
         'tabulate'
     ],
     test_suite='tests',
