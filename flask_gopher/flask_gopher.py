@@ -816,7 +816,11 @@ class GopherBaseWSGIServer(BaseWSGIServer):
         con, info = super(GopherBaseWSGIServer, self).get_request()
 
         if self.ssl_context:
-            # Check the first byte without removing it from the buffer
+            # Check the first byte without removing it from the buffer.
+            # This hook is inserted before the request is distributed to a
+            # separate thread / process so it could block the whole server if
+            # the client doesn't send any data. You have been warned!
+            con.settimeout(5)
             char = con.recv(1, socket.MSG_PEEK)
             if char == b'\x16':
                 # It's a SYN byte, assume the client is trying to establish SSL
