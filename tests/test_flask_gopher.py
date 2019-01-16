@@ -468,12 +468,12 @@ class TestGopherMenu(unittest.TestCase):
 
 class TestGopherBaseWSGIServer(unittest.TestCase):
     def test_make_gopher_server_forking(self):
-        server = make_gopher_ssl_server(processes=4)
+        server = make_gopher_ssl_server('127.0.0.1', 0, processes=4)
         assert server.multiprocess
         assert server.max_children == 4
 
     def test_make_gopher_server_threaded(self):
-        server = make_gopher_ssl_server(threaded=True)
+        server = make_gopher_ssl_server('127.0.0.1', 0, threaded=True)
         assert server.multithread
 
 
