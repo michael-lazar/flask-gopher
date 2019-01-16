@@ -1,5 +1,7 @@
 import re
 import os
+import ssl
+import socket
 import weakref
 import textwrap
 import traceback
@@ -14,7 +16,10 @@ from flask import request, render_template, current_app, url_for
 from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
 from werkzeug.local import LocalProxy
 from werkzeug.urls import url_quote
-from werkzeug.serving import WSGIRequestHandler
+from werkzeug.serving import WSGIRequestHandler, can_fork
+from werkzeug.serving import BaseWSGIServer, ThreadingMixIn, ForkingMixIn
+from werkzeug.serving import generate_adhoc_ssl_context, load_ssl_context
+
 from werkzeug.exceptions import HTTPException
 from itsdangerous import URLSafeSerializer, BadSignature
 
@@ -630,6 +635,7 @@ class GopherRequestHandler(WSGIRequestHandler):
         if self.request_version == 'gopher':
             environ['wsgi.url_scheme'] = 'gopher'
             environ['SEARCH_TEXT'] = self.search_text
+            environ['SECURE'] = isinstance(self.request, ssl.SSLSocket)
 
             # Flask has a sanity check where if app.config['SERVER_NAME'] is
             # defined, it has to match either the HTTP host header or the
@@ -679,6 +685,11 @@ class GopherRequestHandler(WSGIRequestHandler):
             # the werkzeug router does!
             self.path = '/' + self.path
         self.search_text = url_parts[1] if len(url_parts) > 1 else ''
+
+        # Add a token to the requestline for server logging
+        if isinstance(self.request, ssl.SSLSocket):
+            self.requestline = '<SSL> ' + self.requestline
+
         return True
 
 
@@ -776,3 +787,107 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         data = bytes.decode(response.data)
         new_data = re.sub(url_pattern, on_match, data, flags=re.M)
         response.data = new_data.encode()
+
+
+class GopherBaseWSGIServer(BaseWSGIServer):
+    """
+    WSGI server extension that enables SSL sockets on a per-connection basis.
+
+    This is achieved by peeking at the first byte of each socket connection.
+    If the first byte is a SYN, it indicates the start of an SSL handshake.
+    """
+
+    def __init__(self, host, port, app, handler=None,
+                 passthrough_errors=False, ssl_context=None, fd=None):
+        """
+        Override the server initialization to save the SSL context without
+        immediately wrapping the socket in an SSL connection.
+        """
+        super(GopherBaseWSGIServer, self).__init__(
+            host, port, app, handler, passthrough_errors, fd=fd)
+        if ssl_context is not None:
+            if isinstance(ssl_context, tuple):
+                ssl_context = load_ssl_context(*ssl_context)
+            if ssl_context == 'adhoc':
+                ssl_context = generate_adhoc_ssl_context()
+            self.ssl_context = ssl_context
+
+    def get_request(self):
+        con, info = super(GopherBaseWSGIServer, self).get_request()
+
+        if self.ssl_context:
+            # Check the first byte without removing it from the buffer.
+            # This hook is inserted before the request is distributed to a
+            # separate thread / process so it could block the whole server if
+            # the client doesn't send any data. You have been warned!
+            con.settimeout(5)
+            char = con.recv(1, socket.MSG_PEEK)
+            if char == b'\x16':
+                # It's a SYN byte, assume the client is trying to establish SSL
+                con = self.ssl_context.wrap_socket(con, server_side=True)
+
+        return con, info
+
+    def serve_forever(self):
+        """
+        Normally the server startup is logged by werkzeug from inside of
+        run_simple(). Because we're deriving our own subclass we are not able
+        to use that method, so the logging is copied here for convenience.
+        """
+        display_hostname = self.host not in ('', '*') and self.host or 'localhost'
+        if ':' in display_hostname:
+            display_hostname = '[%s]' % display_hostname
+        quit_msg = '(Press CTRL+C to quit)'
+        self.log('info', ' * Running on %s://%s:%d/ %s',
+                 self.ssl_context is None and 'http' or 'https',
+                 display_hostname, self.port, quit_msg)
+        super(GopherBaseWSGIServer, self).serve_forever()
+
+
+class GopherThreadedWSGIServer(ThreadingMixIn, GopherBaseWSGIServer):
+    """
+    Copy of werkzeug.serving.ThreadedWSGIServer using our custom base server.
+    """
+    multithread = True
+    daemon_threads = True
+
+
+class GopherForkingWSGIServer(ForkingMixIn, GopherBaseWSGIServer):
+    """
+    Copy of werkzeug.serving.ForkingWSGIServer using our custom base server.
+    """
+    multiprocess = True
+
+    def __init__(self, host, port, app, processes=40, handler=None,
+                 passthrough_errors=False, ssl_context=None, fd=None):
+        if not can_fork:
+            raise ValueError('Your platform does not support forking.')
+        BaseWSGIServer.__init__(self, host, port, app, handler,
+                                passthrough_errors, ssl_context, fd)
+        self.max_children = processes
+
+
+def make_gopher_ssl_server(
+        host=None, port=None, app=None, threaded=False, processes=1,
+        request_handler=None, passthrough_errors=False, ssl_context=None,
+        fd=None):
+    """
+    Create a new server instance that supports ad-hoc Gopher SSL connections.
+
+    This server is only necessary when enabling experimental SSL over gopher.
+    Otherwise, it's simpler to use app.run() instead. That method accepts the
+    same arguments and has additional support for things like debug mode and
+    auto-reloading.
+    """
+    if threaded and processes > 1:
+        raise ValueError("cannot have a multithreaded and multi process server.")
+    elif threaded:
+        return GopherThreadedWSGIServer(host, port, app, request_handler,
+                                        passthrough_errors, ssl_context, fd=fd)
+    elif processes > 1:
+        return GopherForkingWSGIServer(host, port, app, processes,
+                                       request_handler, passthrough_errors,
+                                       ssl_context, fd=fd)
+    else:
+        return GopherBaseWSGIServer(host, port, app, request_handler,
+                                    passthrough_errors, ssl_context, fd=fd)

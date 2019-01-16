@@ -19,4 +19,5 @@ from .flask_gopher import TextFormatter
 from .flask_gopher import GopherExtension
 from .flask_gopher import GopherRequestHandler
 from .flask_gopher import GopherSessionInterface
+from .flask_gopher import make_gopher_ssl_server
 from .flask_gopher import menu, render_menu, render_menu_template

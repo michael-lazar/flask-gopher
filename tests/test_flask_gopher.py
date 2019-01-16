@@ -1,14 +1,15 @@
 import os
+import ssl
 import json
 import socket
 import unittest
 from threading import Thread
 from urllib.request import Request, urlopen
 
-from werkzeug.serving import make_server
 from flask import Flask, request, url_for, session
 from flask_gopher import GopherExtension, GopherRequestHandler
 from flask_gopher import GopherMenu, TextFormatter
+from flask_gopher import make_gopher_ssl_server
 from flask_gopher import menu, render_menu, render_menu_template
 
 
@@ -36,6 +37,9 @@ class TestFunctional(unittest.TestCase):
 
         cls.app = app = Flask(__name__, template_folder=TEST_DIR)
         cls.gopher = gopher = GopherExtension(app)
+        cls.ssl_context = (
+            os.path.join(TEST_DIR, 'test_cert.pem'),
+            os.path.join(TEST_DIR, 'test_key.pem'))
 
         app.config['SECRET_KEY'] = 's3cr3tk3y'
         app.config['SERVER_NAME'] = 'gopher.server.com:7000'
@@ -55,7 +59,11 @@ class TestFunctional(unittest.TestCase):
 
         @app.route('/template')
         def template():
-            return render_menu_template('test_template', items=range(3))
+            return render_menu_template('test_template.gopher', items=range(3))
+
+        @app.route('/ssl')
+        def ssl():
+            return str(request.environ['SECURE'])
 
         @app.route('/page/<int:page>')
         def page(page):
@@ -92,7 +100,9 @@ class TestFunctional(unittest.TestCase):
 
         # This is the same thing as calling app.run(), but it returns a handle
         # to the server so we can call server.shutdown() later.
-        cls.server = make_server('127.0.0.1', 0, app, request_handler=GopherRequestHandler)
+        cls.server = make_gopher_ssl_server(
+            '127.0.0.1', 0, app, request_handler=GopherRequestHandler,
+            ssl_context=cls.ssl_context)
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
@@ -105,11 +115,13 @@ class TestFunctional(unittest.TestCase):
         cls.thread.join(timeout=5)
 
     @classmethod
-    def send_data(cls, data):
+    def send_data(cls, data, use_ssl=False):
         """
         Send byte data to the server using a TCP/IP socket.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if use_ssl:
+                s = ssl.wrap_socket(s)
             s.connect((cls.server.host, cls.server.port))
             s.sendall(data)
 
@@ -296,6 +308,18 @@ class TestFunctional(unittest.TestCase):
         text = text.format(session_str=session_str)
         self.assertEqual(resp, text.encode())
 
+    def test_ssl_connection(self):
+        """
+        Clients should be able to optionally negotiate SSL connections.
+        """
+        # Insecure connection
+        resp = self.send_data(b'/ssl\r\n')
+        self.assertEqual(resp, b'False')
+
+        # Secure connection
+        resp = self.send_data(b'/ssl\r\n', use_ssl=True)
+        self.assertEqual(resp, b'True')
+
 
 class TestTextFormatter(unittest.TestCase):
     def setUp(self):
@@ -440,6 +464,17 @@ class TestGopherMenu(unittest.TestCase):
     def test_title(self):
         line = self.menu.title('Hello World')
         self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
+
+
+class TestGopherBaseWSGIServer(unittest.TestCase):
+    def test_make_gopher_server_forking(self):
+        server = make_gopher_ssl_server('127.0.0.1', 0, processes=4)
+        assert server.multiprocess
+        assert server.max_children == 4
+
+    def test_make_gopher_server_threaded(self):
+        server = make_gopher_ssl_server('127.0.0.1', 0, threaded=True)
+        assert server.multithread
 
 
 if __name__ == '__main__':
