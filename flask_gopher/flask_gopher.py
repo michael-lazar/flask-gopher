@@ -876,8 +876,8 @@ def make_gopher_ssl_server(
 
     This server is only necessary when enabling experimental SSL over gopher.
     Otherwise, it's simpler to use app.run() instead. That method accepts the
-    same arguments as the, and has additional support for things like debug
-    mode and auto-reloading.
+    same arguments and has additional support for things like debug mode and
+    auto-reloading.
     """
     if threaded and processes > 1:
         raise ValueError("cannot have a multithreaded and multi process server.")
