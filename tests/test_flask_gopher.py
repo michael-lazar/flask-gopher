@@ -6,11 +6,10 @@ import unittest
 from threading import Thread
 from urllib.request import Request, urlopen
 
-from werkzeug.serving import make_server
 from flask import Flask, request, url_for, session
 from flask_gopher import GopherExtension, GopherRequestHandler
 from flask_gopher import GopherMenu, TextFormatter
-from flask_gopher import load_gopher_ssl_context
+from flask_gopher import make_gopher_ssl_server
 from flask_gopher import menu, render_menu, render_menu_template
 
 
@@ -38,7 +37,7 @@ class TestFunctional(unittest.TestCase):
 
         cls.app = app = Flask(__name__, template_folder=TEST_DIR)
         cls.gopher = gopher = GopherExtension(app)
-        cls.ssl_context = load_gopher_ssl_context(
+        cls.ssl_context = (
             os.path.join(TEST_DIR, 'test_cert.pem'),
             os.path.join(TEST_DIR, 'test_key.pem'))
 
@@ -101,9 +100,9 @@ class TestFunctional(unittest.TestCase):
 
         # This is the same thing as calling app.run(), but it returns a handle
         # to the server so we can call server.shutdown() later.
-        cls.server = make_server('127.0.0.1', 0, app,
-                                 ssl_context=cls.ssl_context,
-                                 request_handler=GopherRequestHandler)
+        cls.server = make_gopher_ssl_server(
+            '127.0.0.1', 0, app, request_handler=GopherRequestHandler,
+            ssl_context=cls.ssl_context)
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
@@ -313,25 +312,13 @@ class TestFunctional(unittest.TestCase):
         """
         Clients should be able to optionally negotiate SSL connections.
         """
-
         # Insecure connection
         resp = self.send_data(b'/ssl\r\n')
         self.assertEqual(resp, b'False')
 
         # Secure connection
         resp = self.send_data(b'/ssl\r\n', use_ssl=True)
-        self.assertEqual(resp, b'False')
-
-        # socketserver
-        # def shutdown_request(self, request):
-        #     """Called to shutdown and close an individual request."""
-        #     try:
-        #         # explicitly shutdown.  socket.close() merely releases
-        #         # the socket and waits for GC to perform the actual close.
-        #         request.shutdown(socket.SHUT_WR)
-        #     except OSError:
-        #         pass  # some platforms may raise ENOTCONN here
-        #     self.close_request(request)
+        self.assertEqual(resp, b'True')
 
 
 class TestTextFormatter(unittest.TestCase):
@@ -477,6 +464,17 @@ class TestGopherMenu(unittest.TestCase):
     def test_title(self):
         line = self.menu.title('Hello World')
         self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
+
+
+class TestGopherBaseWSGIServer(unittest.TestCase):
+    def test_make_gopher_server_forking(self):
+        server = make_gopher_ssl_server(processes=4)
+        assert server.multiprocess
+        assert server.max_children == 4
+
+    def test_make_gopher_server_threaded(self):
+        server = make_gopher_ssl_server(threaded=True)
+        assert server.multithread
 
 
 if __name__ == '__main__':
