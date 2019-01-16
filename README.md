@@ -19,6 +19,15 @@
   </a>
 </p>
 
+* [About](#about)  
+* [Demo](#demo)  
+* [Installation](#installation)  
+* [Quickstart](#quickstart)
+* [Gopher and WSGI](#gopher-and-wsgi)
+* [Building Gopher Menus](#building-gopher-menus)  
+* [Using Templates](#using-templates)  
+* [Gopher Protocol References](#gopher-protocol-references)  
+
 ## About
 
 Gopher is an alternative to the World Wide Web that peaked in popularity in the early 90's. There are still a handful of gopher sites maintained by enthusiasts; you can learn more about its history at http://gopher.floodgap.com/gopher/
