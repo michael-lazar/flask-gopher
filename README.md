@@ -246,8 +246,7 @@ if __name__ == '__main__':
         app=app,
         threaded=True,
         request_handler=GopherRequestHandler,
-        ssl_context=(‘/path/to/public_cert.pem’, ‘/path/to/private_cert.pem’)
-    )
+        ssl_context=(‘/path/to/public_cert.pem’, ‘/path/to/private_cert.pem’))
     server.serve_forever()
 ```
 
