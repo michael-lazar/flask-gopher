@@ -234,7 +234,7 @@ def index():
 - https://tools.ietf.org/html/draft-matavka-gopher-ii-03 (2015)
 - https://www.w3.org/Addressing/URL/4_1_Gopher+.html
 
-An interesting side note, the python standard library used to contain a gopher module. It was deprecated in 2.5, and removed in 2.6. (<em>https://www.python.org/dev/peps/pep-0004/</em>)
+An interesting side note, the python standard library used to contain its own gopher module. It was deprecated in 2.5, and removed in 2.6. (<em>https://www.python.org/dev/peps/pep-0004/</em>)
 
 
 >     Module name:   gopherlib
