@@ -27,7 +27,8 @@
 * [Quickstart](#quickstart)
 * [Gopher and WSGI](#gopher-and-wsgi)
 * [Building Gopher Menus](#building-gopher-menus)  
-* [Using Templates](#using-templates)  
+* [Using Templates](#using-templates)
+* [SSL/TLS Support](#ssl/tls-support)
 * [Gopher Protocol References](#gopher-protocol-references)  
 
 ## About
@@ -225,6 +226,33 @@ def index():
 <p align="center">
   <img alt="gopher" src="resources/example_template.png"/>
 </p>
+
+## SSL/TLS Support
+
+There were never any official guidelines released on how to establish secure connections over gopher. There's no ``http://`` vs ``https://`` or ``port 80`` vs ``port 443`` distinction like we have in the HTTP world.  However, this topic has a growing interest within the gopher community. New gopher clients and servers are starting to experiment with varying degrees of support for TLS.
+
+Flask-Gopher solves the TLS problem by peeking at every incoming connection to determine if a TLS handshake is being attempted by the client. If so, the requested content will automatically be returned over a secure socket. Otherwise, the content will be returned as plain text. This scheme has the advantage of being fully backwards compatible with older gopher clients. All content is served by a single gopher server running on port 70, and clients are in control over how they want to receive it.
+
+Flask's WSGI server (like all good python WSGI servers) is designed to handle HTTPS with an "all-or-nothing" approach. Either it's turned on for all requests or it's not turned on at all. As such, enabling dynamic support for TLS requires using a slightly modified WSGI server. Here's an example of how to set it up::
+
+```python
+from flask_gopher import make_gopher_ssl_server
+
+app = ...
+
+if __name__ == '__main__':  
+    server = make_gopher_ssl_server(
+        '127.0.0.1', 70, app=app, threaded=True, request_handler=GopherRequestHandler
+        ssl_context=(‘/path/to/public_cert.pem’, ‘/path/to/private_cert.pem’)
+    )
+    server.serve_forever()
+```
+
+When TLS is enabled, the ``request.environ['SECURE']`` variable contains whether or not the current request is being made over a secure socket.
+
+Looking for a gopher client with to try this out with? Solderpunk's [VF-1](https://github.com/solderpunk/VF-1) is an excellent choice:
+
+| **vf1 mozz.us:7005/1/demo-ssl --tls**
 
 
 ## Gopher Protocol References
