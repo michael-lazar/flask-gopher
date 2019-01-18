@@ -242,7 +242,10 @@ app = ...
 
 if __name__ == '__main__':  
     server = make_gopher_ssl_server(
-        '127.0.0.1', 70, app=app, threaded=True, request_handler=GopherRequestHandler
+        '127.0.0.1', 70,
+        app=app,
+        threaded=True,
+        request_handler=GopherRequestHandler,
         ssl_context=(‘/path/to/public_cert.pem’, ‘/path/to/private_cert.pem’)
     )
     server.serve_forever()
