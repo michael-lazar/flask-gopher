@@ -252,8 +252,9 @@ When TLS is enabled, the ``request.environ['SECURE']`` variable contains whether
 
 Looking for a gopher client with to try this out with? Solderpunk's [VF-1](https://github.com/solderpunk/VF-1) is an excellent choice:
 
-| **vf1 mozz.us:7005/1/demo-ssl --tls**
-
+```bash
+$ vf1 mozz.us:7005/1/demo-ssl --tls
+```
 
 ## Gopher Protocol References
 
