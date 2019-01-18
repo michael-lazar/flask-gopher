@@ -243,4 +243,4 @@ An interesting side note, the python standard library used to contain its own go
 >     Documentation: Documented as deprecated since Python 2.5.  Removed
 >                    in Python 2.6.
 
-There's also still a reference gopher client in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
+A reference gopher client still exists in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
