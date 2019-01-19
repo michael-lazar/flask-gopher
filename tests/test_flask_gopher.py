@@ -88,7 +88,7 @@ class TestFunctional(unittest.TestCase):
 
         @app.route('/query')
         def query():
-            return 'query: ' + json.dumps(dict(request.args))
+            return 'query: ' + json.dumps(dict(request.args.items()))
 
         @app.route('/search')
         def search():
@@ -180,7 +180,7 @@ class TestFunctional(unittest.TestCase):
         resp = self.send_data(b'/query\r\n')
         self.assertEqual(resp, b'query: {}')
         resp = self.send_data(b'/query?city=Grand%20Rapids\r\n')
-        self.assertEqual(resp, b'query: {"city": ["Grand Rapids"]}')
+        self.assertEqual(resp, b'query: {"city": "Grand Rapids"}')
 
     def test_search(self):
         """
