@@ -45,9 +45,6 @@ class TestFunctional(unittest.TestCase):
         cls.app.logger.setLevel(60)  # Disable Flask exception logging
 
         cls.gopher = gopher = GopherExtension(app)
-        cls.ssl_context = (
-            os.path.join(TEST_DIR, 'test_cert.pem'),
-            os.path.join(TEST_DIR, 'test_key.pem'))
 
         app.config['SECRET_KEY'] = 's3cr3tk3y'
         app.config['SERVER_NAME'] = 'gopher.server.com:7000'
@@ -114,7 +111,7 @@ class TestFunctional(unittest.TestCase):
         # to the server so we can call server.shutdown() later.
         cls.server = make_gopher_ssl_server(
             '127.0.0.1', 0, app, threaded=cls.threaded, processes=cls.processes,
-            request_handler=GopherRequestHandler, ssl_context=cls.ssl_context)
+            request_handler=GopherRequestHandler, ssl_context='adhoc')
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
