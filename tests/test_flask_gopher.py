@@ -2,6 +2,7 @@ import os
 import ssl
 import json
 import socket
+import logging
 import unittest
 from threading import Thread
 from urllib.request import Request, urlopen
@@ -14,6 +15,9 @@ from flask_gopher import menu, render_menu, render_menu_template
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+
+# Disable WSGI server logs spamming the unit test output
+logging.getLogger('werkzeug').setLevel(60)
 
 
 class TestFunctional(unittest.TestCase):
@@ -37,8 +41,9 @@ class TestFunctional(unittest.TestCase):
         """
         Spin up a fully-functional test gopher application in a new thread.
         """
-
         cls.app = app = Flask(__name__, template_folder=TEST_DIR)
+        cls.app.logger.setLevel(60)  # Disable Flask exception logging
+
         cls.gopher = gopher = GopherExtension(app)
         cls.ssl_context = (
             os.path.join(TEST_DIR, 'test_cert.pem'),
@@ -110,7 +115,6 @@ class TestFunctional(unittest.TestCase):
         cls.server = make_gopher_ssl_server(
             '127.0.0.1', 0, app, threaded=cls.threaded, processes=cls.processes,
             request_handler=GopherRequestHandler, ssl_context=cls.ssl_context)
-        cls.server.log = lambda *args, **kwargs: None
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
