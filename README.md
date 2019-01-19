@@ -28,7 +28,7 @@
 * [Gopher and WSGI](#gopher-and-wsgi)
 * [Building Gopher Menus](#building-gopher-menus)  
 * [Using Templates](#using-templates)
-* [SSL/TLS Support](#ssl/tls-support)
+* [TLS Support](#tls-support)
 * [Gopher Protocol References](#gopher-protocol-references)  
 
 ## About
@@ -227,7 +227,7 @@ def index():
   <img alt="gopher" src="resources/example_template.png"/>
 </p>
 
-## SSL/TLS Support
+## TLS Support
 
 There were never any official guidelines released on how to establish secure connections over gopher. There's no ``http://`` vs ``https://`` or ``port 80`` vs ``port 443`` distinction like we have in the HTTP world.  However, this topic has a growing interest within the gopher community. New gopher clients and servers are starting to experiment with varying degrees of support for TLS.
 
