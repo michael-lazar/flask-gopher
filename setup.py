@@ -31,7 +31,8 @@ setuptools.setup(
         'Flask',
         # pyfiglet v0.8.0 removes a bunch of fonts due to licensing issues :(
         'pyfiglet<=0.7.6',
-        'tabulate'
+        'tabulate',
+        'pyopenssl',
     ],
     test_suite='tests',
     classifiers=[
