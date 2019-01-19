@@ -29,6 +29,9 @@ class TestFunctional(unittest.TestCase):
     """
     app = gopher = server = thread = None
 
+    threaded = False
+    processes = 1
+
     @classmethod
     def setUpClass(cls):
         """
@@ -64,6 +67,10 @@ class TestFunctional(unittest.TestCase):
         @app.route('/ssl')
         def ssl():
             return str(request.environ['SECURE'])
+
+        @app.route('/echo/<string>')
+        def echo(string):
+            return string
 
         @app.route('/page/<int:page>')
         def page(page):
@@ -101,8 +108,9 @@ class TestFunctional(unittest.TestCase):
         # This is the same thing as calling app.run(), but it returns a handle
         # to the server so we can call server.shutdown() later.
         cls.server = make_gopher_ssl_server(
-            '127.0.0.1', 0, app, request_handler=GopherRequestHandler,
-            ssl_context=cls.ssl_context)
+            '127.0.0.1', 0, app, threaded=cls.threaded, processes=cls.processes,
+            request_handler=GopherRequestHandler, ssl_context=cls.ssl_context)
+        cls.server.log = lambda *args, **kwargs: None
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
@@ -132,6 +140,9 @@ class TestFunctional(unittest.TestCase):
                 if not data:
                     break
                 chunks.append(data)
+
+            if use_ssl:
+                s.close()
             return b''.join(chunks)
 
     def test_empty_request(self):
@@ -321,6 +332,111 @@ class TestFunctional(unittest.TestCase):
         self.assertEqual(resp, b'True')
 
 
+class TestFunctionalThreaded(TestFunctional):
+    """
+    Re-run all the functional tests using the multi-threaded server
+    """
+    threaded = True
+
+    def test_gopher_server_type(self):
+        """
+        The threaded server should have been instantiated.
+        """
+        assert self.server.multithread
+
+    def test_non_blocking_requests(self):
+        """
+        Simultaneous requests should not block the server.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            # Open a connection and but don't stream any data
+            s = ssl.wrap_socket(s)
+            s.connect((self.server.host, self.server.port))
+
+            # Open a second connection before finishing the first one
+            resp = self.send_data(b'/echo/request-2\n')
+            self.assertEqual(resp, b'request-2')
+
+            # Now go back and finish the first request
+            s.sendall(b'/echo/request-1\n')
+            resp = s.recv(2048)
+            s.close()
+            self.assertEqual(resp, b'request-1')
+
+    def test_isolated_requests(self):
+        """
+        Simultaneous connections should be isolated from each other.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            # Start streaming data but don't finish
+            s = ssl.wrap_socket(s)
+            s.connect((self.server.host, self.server.port))
+            s.sendall(b'/echo/requ')
+
+            # Open a second connection before finishing the first one
+            resp = self.send_data(b'/echo/request-2\n')
+            self.assertEqual(resp, b'request-2')
+
+            # Now go back and finish the first request
+            s.sendall(b'est-1\n')
+            resp = s.recv(2048)
+            s.close()
+            self.assertEqual(resp, b'request-1')
+
+
+class TestFunctionalForking(TestFunctional):
+    """
+    Re-run all the functional tests using the multi-process server
+    """
+    processes = 4
+
+    def test_gopher_server_type(self):
+        """
+        The forking server should have been instantiated.
+        """
+        assert self.server.multiprocess
+        assert self.server.max_children == 4
+
+    def test_non_blocking_requests(self):
+        """
+        Simultaneous requests should not block the server.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            # Open a connection and but don't stream any data
+            s = ssl.wrap_socket(s)
+            s.connect((self.server.host, self.server.port))
+
+            # Open a second connection before finishing the first one
+            resp = self.send_data(b'/echo/request-2\n')
+            self.assertEqual(resp, b'request-2')
+
+            # Now go back and finish the first request
+            s.sendall(b'/echo/request-1\n')
+            resp = s.recv(2048)
+            s.close()
+            self.assertEqual(resp, b'request-1')
+
+    def test_isolated_requests(self):
+        """
+        Simultaneous connections should be isolated from each other.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            # Start streaming data but don't finish
+            s = ssl.wrap_socket(s)
+            s.connect((self.server.host, self.server.port))
+            s.sendall(b'/echo/requ')
+
+            # Open a second connection before finishing the first one
+            resp = self.send_data(b'/echo/request-2\n')
+            self.assertEqual(resp, b'request-2')
+
+            # Now go back and finish the first request
+            s.sendall(b'est-1\n')
+            resp = s.recv(2048)
+            s.close()
+            self.assertEqual(resp, b'request-1')
+
+
 class TestTextFormatter(unittest.TestCase):
     def setUp(self):
         self.formatter = TextFormatter(default_width=70)
@@ -464,17 +580,6 @@ class TestGopherMenu(unittest.TestCase):
     def test_title(self):
         line = self.menu.title('Hello World')
         self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
-
-
-class TestGopherBaseWSGIServer(unittest.TestCase):
-    def test_make_gopher_server_forking(self):
-        server = make_gopher_ssl_server('127.0.0.1', 0, processes=4)
-        assert server.multiprocess
-        assert server.max_children == 4
-
-    def test_make_gopher_server_threaded(self):
-        server = make_gopher_ssl_server('127.0.0.1', 0, threaded=True)
-        assert server.multithread
 
 
 if __name__ == '__main__':
