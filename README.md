@@ -233,7 +233,7 @@ There were never any official guidelines released on how to establish secure con
 
 Flask-Gopher solves the security problem by peeking at every incoming connection to determine if a TLS handshake is being attempted by the client. If so, the requested content will automatically be returned over a secure socket. Otherwise, the content will be returned as plain text. This scheme has the advantage of being fully backwards compatible with older gopher clients. All content is served by a single gopher server running on port 70, and clients are in control over how they want to receive it.
 
-Flask's WSGI server (like all good python WSGI servers) is designed to handle HTTPS with an "all-or-nothing" approach. Either SSL is turned on for all requests or it's not turned on at all. Flask-Gopher is able to overcome this limitation by gently modifying the builtin Flask WSGI server. Here's an example of how SSL can be enabled:
+Flask's WSGI server (like all good python WSGI servers) is designed to handle HTTPS with an "all-or-nothing" approach. Either TLS is turned on for all requests or it's not turned on at all. Flask-Gopher is able to overcome this limitation by gently modifying the builtin Flask WSGI server. Here's an example of how TLS can be enabled:
 
 ```python
 from flask_gopher import make_gopher_ssl_server
