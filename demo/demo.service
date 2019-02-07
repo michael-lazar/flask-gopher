@@ -8,7 +8,7 @@ Description=Demo Flask-Gopher server
 Type=simple
 Restart=always
 RestartSec=5
-ExecStart=/path/to/run_server.py
+ExecStart=/var/gopher/demo/run_server.py
 
 [Install]
 WantedBy=default.target

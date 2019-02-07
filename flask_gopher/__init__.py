@@ -16,6 +16,7 @@ from .__version__ import __version__
 
 from .flask_gopher import GopherMenu
 from .flask_gopher import TextFormatter
+from .flask_gopher import GopherDirectory
 from .flask_gopher import GopherExtension
 from .flask_gopher import GopherRequestHandler
 from .flask_gopher import GopherSessionInterface
