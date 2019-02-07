@@ -23,13 +23,13 @@ logging.getLogger('werkzeug').setLevel(60)
 class TestFunctional(unittest.TestCase):
     """
     Because the flask_gopher extension is built on hacking the WSGI protocol
-    and the werkzeug HTTP server, I feel that the only way to sincerely
-    know that it's working properly is through functional testing.
+    and the werkzeug HTTP server, I feel that the only way to test that it's
+    working properly is through functional testing.
 
-    So this class will spin up a complete test flask application and serve
-    it on a local TCP port in a new thread. The tests will send real gopher
-    connection strings to the server and check the validity of the response
-    body from end-to-end.
+    This class will spin up a complete test flask application and serve it on a
+    local TCP port in a new thread. The tests will send real gopher connection
+    strings to the server and check the validity of the response body from
+    end-to-end.
     """
     app = gopher = server = thread = None
 
@@ -98,6 +98,17 @@ class TestFunctional(unittest.TestCase):
         def internal_error():
             return 1 // 0
 
+        test_directory = gopher.serve_directory(TEST_DIR, 'directory', show_timestamp=False)
+
+        @app.route('/directory')
+        @app.route('/directory/<path:filename>')
+        def directory(filename=''):
+            is_directory, data = test_directory.load_file(filename)
+            if is_directory:
+                return gopher.render_menu(data)
+            else:
+                return data
+
         @app.route('/session')
         def session_route():
             resp = render_menu(
@@ -107,8 +118,6 @@ class TestFunctional(unittest.TestCase):
             session['name'] = 'fran'
             return resp
 
-        # This is the same thing as calling app.run(), but it returns a handle
-        # to the server so we can call server.shutdown() later.
         cls.server = make_gopher_ssl_server(
             '127.0.0.1', 0, app, threaded=cls.threaded, processes=cls.processes,
             request_handler=GopherRequestHandler, ssl_context='adhoc')
@@ -229,8 +238,7 @@ class TestFunctional(unittest.TestCase):
         External Gopher menu links should have a "/1/" at the root.
         """
         resp = self.send_data(b'/external_menu_url\r\n')
-        url = 'gopher://gopher.server.com:7000/1/page/2'
-        self.assertEqual(resp, url.encode())
+        self.assertEqual(resp,  b'gopher://gopher.server.com:7000/1/page/2')
 
     def test_url_redirect(self):
         """
@@ -331,6 +339,25 @@ class TestFunctional(unittest.TestCase):
         # Secure connection
         resp = self.send_data(b'/ssl\r\n', use_ssl=True)
         self.assertEqual(resp, b'True')
+
+    def test_directory_load_file(self):
+        """
+        Should be able to serve a file from a custom directory.
+        """
+        resp = self.send_data(b'/directory/test_file.txt\r\n')
+        self.assertEqual(resp, b'File Contents')
+
+        # Should not be able to break out of the directory
+        resp = self.send_data(b'/directory/..\r\n')
+        self.assertTrue(resp.startswith(b'iError: 404 Not Found'))
+
+    def test_directory_load_folder(self):
+        """
+        Should be able to generate a gopher menu from a directory.
+        """
+        resp = self.send_data(b'/directory\r\n')
+        line = b'0test_file.txt\t/directory/test_file.txt\tgopher.server.com\t7000\r\n'
+        self.assertIn(line, resp)
 
 
 class TestFunctionalThreaded(TestFunctional):

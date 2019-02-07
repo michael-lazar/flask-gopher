@@ -5,7 +5,11 @@ import socket
 import weakref
 import textwrap
 import traceback
+import mimetypes
+from pathlib import Path
+from datetime import datetime
 from itertools import zip_longest
+from collections import namedtuple
 from functools import partialmethod
 from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 
@@ -13,6 +17,7 @@ from pyfiglet import figlet_format, FigletError
 from tabulate import tabulate
 from flask import _request_ctx_stack as request_ctx_stack
 from flask import request, render_template, current_app, url_for
+from flask.helpers import safe_join, send_file
 from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
 from werkzeug.local import LocalProxy
 from werkzeug.urls import url_quote
@@ -20,7 +25,7 @@ from werkzeug.serving import WSGIRequestHandler, can_fork
 from werkzeug.serving import BaseWSGIServer, ThreadingMixIn, ForkingMixIn
 from werkzeug.serving import generate_adhoc_ssl_context, load_ssl_context
 
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, BadRequest
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from .__version__ import __version__
@@ -546,7 +551,20 @@ class GopherExtension:
         template_string = render_template(template_name, **context)
         return self.render_menu(template_string)
 
-    def url_for(self, endpoint, _external=False, _type=1, **values):
+    def serve_directory(self, local_directory, view_name, url_token='filename',
+                        show_timestamp=True, width=None):
+        """
+        This is a convenience wrapper around the GopherDirectory class.
+        """
+        return GopherDirectory(
+            local_directory,
+            view_name,
+            url_token=url_token,
+            show_timestamp=show_timestamp,
+            width=width or self.width)
+
+    @staticmethod
+    def url_for(endpoint, _external=False, _type=1, **values):
         """
         Injects the type into the beginning of the selector for external URLs.
 
@@ -691,6 +709,138 @@ class GopherRequestHandler(WSGIRequestHandler):
             self.requestline = '<SSL> ' + self.requestline
 
         return True
+
+
+class GopherDirectory:
+    """
+    This class can be used as a helper to generate an gopher menu that maps to
+    a directory on the filesystem.
+
+    Usage:
+
+        music_directory = GopherDirectory('/home/gopher/music', 'music', gopher.menu)
+
+        @app.route('/files/music')
+        @app.route('/files/music/<path:filename>')
+        def music(filename=''):
+
+            is_directory, file = music_directory.load_file(filename)
+            if is_directory:
+                return gopher.render_menu(file)
+            else
+                return file
+    """
+    result_class = namedtuple('file', ['is_directory', 'data'])
+    timestamp_fmt = '%Y-%m-%d %H:%M:%S'
+
+    def __init__(self,
+                 local_directory,
+                 view_name,
+                 url_token='filename',
+                 show_timestamp=True,
+                 width=70):
+        """
+        Args:
+            local_directory: The local file system path that will be served.
+            view_name: The name of the app view that maps to the directory.
+            url_token: The path will be inserted into this token in the URL.
+            show_timestamp: Include the last accessed timestamp for each file.
+            width: The page width to use when formatting timestamp strings.
+        """
+        self.local_directory = local_directory
+        self.view_name = view_name
+        self.url_token = url_token
+        self.show_timestamp = show_timestamp
+        self.width = width
+
+        #  Custom file extensions can be added via self.mimetypes.add_type()
+        self.mimetypes = mimetypes.MimeTypes()
+
+    def load_file(self, filename):
+        """
+        Load the filename from the local directory. The type of the returned
+        object depends on if the filename corresponds to a file or a directory.
+        If it's a file, a flask Response object containing the file's data will
+        be returned. If it's a directory, a gopher menu will be returned.
+
+        This method uses the flask application context, which means that it
+        can only be invoked from inside of a flask view.
+        """
+        abs_filename = safe_join(self.local_directory, filename)
+        if not os.path.isabs(abs_filename):
+            abs_filename = os.path.join(current_app.root_path, abs_filename)
+
+        if os.path.isfile(abs_filename):
+            return self.result_class(False, send_file(abs_filename))
+        elif os.path.isdir(abs_filename):
+            data = self._parse_directory(filename, abs_filename)
+            return self.result_class(True, data)
+        else:
+            raise BadRequest()
+
+    def _parse_directory(self, folder, abs_folder):
+        """
+        Construct a gopher menu that represents all of the files in a directory.
+        """
+        folder = Path(folder)
+
+        lines = []
+
+        # Add a link to the parent directory if we're not at the top level
+        if folder.parent != folder:
+            if folder.parent != folder.parent.parent:
+                options = {self.url_token: folder.parent}
+            else:
+                options = {}
+            lines.append(menu.submenu('..', url_for(self.view_name, **options)))
+
+        for file in sorted(Path(abs_folder).iterdir()):
+            relative_file = folder / file.name
+
+            menu_type = self._guess_menu_type(file)
+
+            item_text = file.name
+            if file.is_dir():
+                item_text += '/'
+
+            if self.show_timestamp:
+                last_modified = datetime.fromtimestamp(file.stat().st_mtime)
+                timestamp = last_modified.strftime(self.timestamp_fmt)
+                item_text = item_text.ljust(self.width - len(timestamp)) + timestamp
+
+            options = {self.url_token: relative_file}
+            lines.append(menu_type(item_text, url_for(self.view_name, **options)))
+
+        return '\n'.join(lines)
+
+    def _guess_menu_type(self, file):
+        """
+        Guess the gopher menu type for the given file.
+        """
+        if file.is_dir():
+            return menu.submenu
+
+        mime_type, encoding = self.mimetypes.guess_type(str(file))
+        if encoding:
+            return menu.archive
+
+        if not mime_type:
+            return menu.file
+
+        menu_type_map = [
+            ('text/', menu.file),
+            ('image/gif', menu.gif),
+            ('image/', menu.image),
+            ('application/pdf', menu.doc),
+            ('application/', menu.binary),
+            ('audio/', menu.sound),
+            ('video/', menu.video),
+        ]
+        for mime_type_prefix, mime_menu_type in menu_type_map:
+            if mime_type.startswith(mime_type_prefix):
+                return mime_menu_type
+
+        return menu.file
 
 
 class GopherSessionInterface(SecureCookieSessionInterface):

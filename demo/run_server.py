@@ -92,6 +92,21 @@ def demo_links():
     return gopher.render_menu_template('demo_links.gopher')
 
 
+# This example uses the app's static folder, but you can also point to any
+# absolute filepath that you want to serve files from.
+static_directory = gopher.serve_directory(app.static_folder, 'demo_directory')
+
+
+@app.route('/demo-directory')
+@app.route('/demo-directory/<path:filename>')
+def demo_directory(filename=''):
+    is_directory, file = static_directory.load_file(filename)
+    if is_directory:
+        return gopher.render_menu_template('demo_directory.gopher', filename=filename, listing=file)
+    else:
+        return file
+
+
 @app.route('/demo-errors')
 def demo_errors():
     return gopher.render_menu_template('demo_errors.gopher')
