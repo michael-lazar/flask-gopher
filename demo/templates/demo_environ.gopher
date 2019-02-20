@@ -1,0 +1,8 @@
+{% extends "layout.gopher" %}
+{% block body %}
+Per-Request Environment Variables
+
+{{ tabulate(environ_table, 'firstrow', 'psql') }}
+
+{{ menu.query('Submit a query to this page', url_for('demo_environ')) }}
+{% endblock %}

@@ -139,6 +139,16 @@ def demo_ssl():
     return gopher.render_menu_template('demo_ssl.gopher', secure=secure)
 
 
+@app.route('/demo-environ')
+def demo_environ():
+    environ_table = [('Field', 'Value')]
+    for key, val in sorted(request.environ.items()):
+        if not key.startswith(('werkzeug', 'wsgi')):
+            environ_table.append((key, val))
+
+    return gopher.render_menu_template('demo_environ.gopher', environ_table=environ_table)
+
+
 @app.route('/demo-form', defaults={'field': None})
 @app.route('/demo-form/<field>')
 def demo_form(field):
