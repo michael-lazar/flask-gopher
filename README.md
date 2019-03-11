@@ -43,7 +43,7 @@ Flask-Gopher is a python [Flask](http://flask.pocoo.org/docs/1.0/) extension tha
 
 *Who is this for?*
 
-I created this extension because I wanted to experiment with building highly dynamic applications in gopher, but I was frustrated with the lack of flexibility in existing gopher servers. The target audience is software developers with some previous experience using a high level web framework like Django or Ruby on Rails. Ideally you should feel comfortable writing python code and cross-referencing with the official Flask documentation.
+I created this extension because I wanted to experiment with building highly dynamic applications in gopher, but I was frustrated with the lack of flexibility in existing gopher servers. The target audience is software developers with some previous experience using a high level web framework like Django or Ruby on Rails. You should feel comfortable writing python code and cross-referencing with the official Flask documentation and [tutorial](http://flask.pocoo.org/docs/1.0/tutorial/).
 
 ## Demo
 
