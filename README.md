@@ -25,9 +25,9 @@
 * [Demo](#demo)  
 * [Installation](#installation)  
 * [Quickstart](#quickstart)
-* [Gopher and WSGI](#gopher-and-wsgi)
 * [Building Gopher Menus](#building-gopher-menus)  
 * [Using Templates](#using-templates)
+* [Gopher and WSGI](#gopher-and-wsgi)
 * [TLS Support](#tls-support)
 * [Gopher Protocol References](#gopher-protocol-references)  
 
@@ -75,52 +75,6 @@ def index():
 
 if __name__ == '__main__':
    app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
-```
-
-## Gopher and WSGI
-
-Python's WSGI (Web Server Gateway Interface) is an established API that defines how python web servers (gunicorn, mod_wsgi, etc) communicate with application frameworks (Flask, Django, etc). It defines a clean boundary between low-level socket and request handling, and high-level application logic.
-
-WSGI was designed to be a very simple and flexible API, but at its heart it's built around HTTP requests. As such, it incorperates some HTTP specific components like request/response headers and status codes. Gopher is more basic and doesn't use these components. Here's an example of the difference in fetching a document with the two protocols:
-
-<table>
-<tr><th colspan=2>HTTP</th><th colspan=2>Gopher</th></tr>
-<tr><th>request</th><th>response</th><th>request</th><th>response</th></tr>
-<tr>
-<td width="20%"><pre>
-GET /path HTTP/1.1
-Accept: text/plain
-Accept-Charset: utf-8
-...more headers
-</pre></td>
-<td width="20%"><pre>
-HTTP/1.1 200 OK
-Server: Apache
-Content-Type: text/html
-...more headers<br>
-(body)
-</pre></td>
-<td width="20%"><pre>/path\r\n</pre></td>
-<td width="20%"><pre>(body)</pre></td>
-</tr></table>
-
-In order to resolve the differences between gopher and HTTP, **Flask-Gopher** implements a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
-
-- Set the request's *REQUEST_METHOD* to ``GET``
-- Set the request's *SERVER_PROTOCOL* (e.g. *HTTP/1.1*) to ``gopher``
-- Set the request's *wsgi.url_scheme* (e.g. *https*)  to ``gopher``
-- Discard the response status line
-- Discard all response headers
-
-Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata hooks that can be accessed from the Flask request.
-
-```python
-@app.route('/')
-def index():
-    if flask.request.scheme == 'gopher':
-        return "iThis was a gopher request\tfake\texample.com\t0\r\n"
-    else:
-        return "<html><body>This was an HTTP request</body></html>" 
 ```
 
 ## Building Gopher Menus
@@ -226,6 +180,53 @@ def index():
 <p align="center">
   <img alt="gopher" src="resources/example_template.png"/>
 </p>
+
+
+## Gopher and WSGI
+
+Python's WSGI (Web Server Gateway Interface) is an established API that defines how python web servers (gunicorn, mod_wsgi, etc) communicate with application frameworks (Flask, Django, etc). It defines a clean boundary between low-level socket and request handling, and high-level application logic.
+
+WSGI was designed to be a very simple and flexible API, but at its heart it's built around HTTP requests. As such, it incorperates some HTTP specific components like request/response headers and status codes. Gopher is more basic and doesn't use these components. Here's an example of the difference in fetching a document with the two protocols:
+
+<table>
+<tr><th colspan=2>HTTP</th><th colspan=2>Gopher</th></tr>
+<tr><th>request</th><th>response</th><th>request</th><th>response</th></tr>
+<tr>
+<td width="20%"><pre>
+GET /path HTTP/1.1
+Accept: text/plain
+Accept-Charset: utf-8
+...more headers
+</pre></td>
+<td width="20%"><pre>
+HTTP/1.1 200 OK
+Server: Apache
+Content-Type: text/html
+...more headers<br>
+(body)
+</pre></td>
+<td width="20%"><pre>/path\r\n</pre></td>
+<td width="20%"><pre>(body)</pre></td>
+</tr></table>
+
+In order to resolve the differences between gopher and HTTP, **Flask-Gopher** implements a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
+
+- Set the request's *REQUEST_METHOD* to ``GET``
+- Set the request's *SERVER_PROTOCOL* (e.g. *HTTP/1.1*) to ``gopher``
+- Set the request's *wsgi.url_scheme* (e.g. *https*)  to ``gopher``
+- Discard the response status line
+- Discard all response headers
+
+Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata hooks that can be accessed from the Flask request.
+
+```python
+@app.route('/')
+def index():
+    if flask.request.scheme == 'gopher':
+        return "iThis was a gopher request\tfake\texample.com\t0\r\n"
+    else:
+        return "<html><body>This was an HTTP request</body></html>" 
+```
 
 ## TLS Support
 
