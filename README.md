@@ -225,7 +225,7 @@ In order to resolve the differences between gopher and HTTP, **Flask-Gopher** im
 - Discard the response status line
 - Discard all response headers
 
-Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata hooks that can be accessed from the Flask request.
+Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata hooks that can be accessed from the Flask request. For example, you can respond the the request differently depending on which protocol is being used:
 
 ```python
 @app.route('/')
