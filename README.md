@@ -21,16 +21,35 @@
 
 ## Contents
 
+* [Quickstart](#quickstart)
 * [About](#about)  
 * [Demo](#demo)  
 * [Installation](#installation)  
-* [Quickstart](#quickstart)
 * [Building Gopher Menus](#building-gopher-menus)  
 * [Using Templates](#using-templates)
 * [Gopher and WSGI](#gopher-and-wsgi)
 * [TLS Support](#tls-support)
 * [Gopher Protocol References](#gopher-protocol-references)  
 
+## Quickstart
+
+```python
+from flask import Flask, url_for
+from flask_gopher import GopherExtension, GopherRequestHandler
+
+app = Flask(__name__)
+gopher = GopherExtension(app)
+
+@app.route('/')
+def index():
+    return gopher.render_menu(
+        gopher.menu.title('My GopherHole'),
+        gopher.menu.submenu('Home', url_for('index')),
+        gopher.menu.info("Look Ma, it's a gopher server!"))
+
+if __name__ == '__main__':
+   app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
+```
 ## About
 
 *What is gopher?*
@@ -39,7 +58,7 @@ Gopher is an alternative to the World Wide Web that peaked in popularity in the 
 
 *What is flask-gopher?*
 
-Flask-Gopher is a [Flask](http://flask.pocoo.org/) extension that adds support for the gopher protocol. It accomplishes this by injecting a thin *Gopher -> HTTP* compatability layer around the built-in web server. Now you can write your gopher server with all the niceties of a modern web framework. You get full access to werkzeug url routing, the jinja2 templating engine, a debugger, community extensions, and more!
+Flask-Gopher is an extension for [Flask](http://flask.pocoo.org/) that adds support for the gopher protocol by injecting a thin *Gopher -> HTTP* compatability layer into the request handler. This means that you can write your gopher server with full support for the niceities that a modern framework provides, including werkzeug url routing, the jinja2 templating engine, a debugger, community extensions, and more!
 
 *Who is this for?*
 
@@ -63,26 +82,6 @@ This package requires **Python v3.4 or higher**
 
 ```
 pip install flask_gopher
-```
-
-## Quickstart
-
-```python
-from flask import Flask, url_for
-from flask_gopher import GopherExtension, GopherRequestHandler
-
-app = Flask(__name__)
-gopher = GopherExtension(app)
-
-@app.route('/')
-def index():
-    return gopher.render_menu(
-        gopher.menu.title('My GopherHole'),
-        gopher.menu.submenu('Home', url_for('index')),
-        gopher.menu.info("Look Ma, it's a gopher server!"))
-
-if __name__ == '__main__':
-   app.run('127.0.0.1', 70, request_handler=GopherRequestHandler)
 ```
 
 ## Building Gopher Menus
