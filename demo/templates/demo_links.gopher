@@ -74,8 +74,7 @@ This is another binary file format for email attachments
 
 {{ 'Type 2 - CCSO Database' | underline('-') }}
 These are also called "Ph nameservers", and they listen on port 105.
-I have been unable to find a working server to link to :(
-{{ menu.ccso('Fake CCSO Server', host='example.com', port=105) }}
+{{ menu.ccso('Mozz.us CSO Server', host='mozz.us', port=105) }}
 
 
 {{ 'Type 7 - Search query' | underline('-') }}
