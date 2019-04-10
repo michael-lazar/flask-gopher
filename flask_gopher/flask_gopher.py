@@ -737,7 +737,7 @@ class GopherDirectory:
                  local_directory,
                  view_name,
                  url_token='filename',
-                 show_timestamp=True,
+                 show_timestamp=False,
                  width=70):
         """
         Args:
