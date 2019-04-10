@@ -1,4 +1,4 @@
-### UNRELEASED
+### v2.1.1 (2019-04-10)
 
 - Add a helper method to generate a gopher menu from a directory.
 - Fixed bug when redirecting to HTTP pages that was causing query parameters
