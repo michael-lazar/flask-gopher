@@ -251,6 +251,19 @@ class TestFunctional(unittest.TestCase):
         href = b'<A HREF="https://gopher.floodgap.com">https://gopher.floodgap.com</A>'
         self.assertIn(href, resp)
 
+    def test_url_redirect_with_query_params(self):
+        """
+        Selectors starting with URL:<path> should preserve the URL query params.
+        """
+        url = 'https://gopher.floodgap.com?foo=b"r&foz=baz'
+        escaped_url = 'https://gopher.floodgap.com?foo=b&#34;r&amp;foz=baz'
+
+        resp = self.send_data('/URL:{}\r\n'.format(url).encode())
+        self.assertTrue(resp.startswith(b'<HTML>'))
+        self.assertTrue(resp.endswith(b'</HTML>'))
+
+        self.assertIn('<A HREF="{0}">{0}</A>'.format(escaped_url).encode(), resp)
+
     def test_http_get(self):
         """
         Regular HTTP requests should still work and headers should be passed

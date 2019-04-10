@@ -1,3 +1,9 @@
+### UNRELEASED
+
+- Add a helper method to generate a gopher menu from a directory.
+- Fixed bug when redirecting to HTTP pages that was causing query parameters
+  to get lost.
+
 ### v2.1.0 (2019-01-08)
 
 - Added support for establishing TLS connections with gopher clients. See the
