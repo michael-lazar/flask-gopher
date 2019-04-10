@@ -20,12 +20,11 @@ from flask import request, render_template, current_app, url_for
 from flask.helpers import safe_join, send_file
 from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
 from werkzeug.local import LocalProxy
-from werkzeug.urls import url_quote
 from werkzeug.serving import WSGIRequestHandler, can_fork
 from werkzeug.serving import BaseWSGIServer, ThreadingMixIn, ForkingMixIn
 from werkzeug.serving import generate_adhoc_ssl_context, load_ssl_context
-
 from werkzeug.exceptions import HTTPException, BadRequest
+from jinja2.filters import escape
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from .__version__ import __version__
@@ -433,7 +432,10 @@ class GopherExtension:
         """
         @app.route('/URL:<path:url>')
         def gopher_url_redirect(url):
-            url = url_quote(url)
+            # Use the full_path because it keeps any query params intact
+            url = request.full_path.split(':', 1)[1]  # Drop the "/URL:"
+            url = url.rstrip('?')  # Flask adds an ? even if there are no params
+            url = escape(url)
             return self.URL_REDIRECT_TEMPLATE.format(url=url).strip()
 
     def _add_gopher_error_handler(self, app):
