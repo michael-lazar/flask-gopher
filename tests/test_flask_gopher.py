@@ -255,15 +255,14 @@ class TestFunctional(unittest.TestCase):
         """
         Selectors starting with URL:<path> should preserve the URL query params.
         """
-        url = b'https://gopher.floodgap.com?foo=b"r&foz=baz'
-        escaped_url = b'https://gopher.floodgap.com?foo=b&#34;r&amp;foz=baz'
+        url = 'https://gopher.floodgap.com?foo=b"r&foz=baz'
+        escaped_url = 'https://gopher.floodgap.com?foo=b&#34;r&amp;foz=baz'
 
-        resp = self.send_data(b'/URL:%s\r\n' % url)
+        resp = self.send_data('/URL:{}\r\n'.format(url).encode())
         self.assertTrue(resp.startswith(b'<HTML>'))
         self.assertTrue(resp.endswith(b'</HTML>'))
 
-        href = b'<A HREF="%s">%s</A>' % (escaped_url, escaped_url)
-        self.assertIn(href, resp)
+        self.assertIn('<A HREF="{0}">{0}</A>'.format(escaped_url).encode(), resp)
 
     def test_http_get(self):
         """
