@@ -1,6 +1,6 @@
 <h1 align="center">Flask-Gopher</h1>
 
-<p align="center">A Flask extension for serving requests over the <a href="https://en.wikipedia.org/wiki/Gopher_(protocol)">Gopher</a> protocol</p>
+<p align="center">A Flask extension for serving requests over the <a href="https://en.wikipedia.org/wiki/Gopher_(protocol)">Gopher</a> protocol.</p>
 
 <p align="center">
   <img alt="gopher" src="resources/gopher_alt.jpg"/>
