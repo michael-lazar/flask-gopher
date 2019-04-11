@@ -1,6 +1,6 @@
 <h1 align="center">Flask-Gopher</h1>
 
-<p align="center">A Flask extension for serving requests over the <a href="https://en.wikipedia.org/wiki/Gopher_(protocol)">Gopher</a> protocol.</p>
+<p align="center">A <a href="http://flask.pocoo.org/">Flask</a> extension for serving requests over the <a href="https://en.wikipedia.org/wiki/Gopher_(protocol)">Gopher</a> protocol.</p>
 
 <p align="center">
   <img alt="gopher" src="resources/gopher_alt.jpg"/>
@@ -53,7 +53,7 @@ Gopher is an alternative to the World Wide Web that peaked in popularity in the 
 
 *What is flask-gopher?*
 
-Flask-Gopher is a [Flask](http://flask.pocoo.org/docs/1.0/) extension that adds a thin *Gopher -> HTTP* compatability layer around the built-in webserver. This means that you that get complete access to Flask's routing, templating engine, debugger, and more!
+Flask-Gopher is a Flask extension that adds a thin *Gopher -> HTTP* compatability layer around the built-in webserver. This means that you that get complete access to Flask's routing, templating engine, debugger, and more!
 
 *Who is this for?*
 
