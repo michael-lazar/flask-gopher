@@ -49,7 +49,7 @@ A live demonstration of the Flask-Gopher server is available in gopherspace at t
 
 *What is gopher?*
 
-Gopher is an alternative to the World Wide Web that peaked in popularity in the early 90's. There are still a handful of gopher sites maintained by enthusiasts; you can learn more about its history at [floodgap](http://gopher.floodgap.com/gopher/)
+Gopher is an alternative to the World Wide Web that peaked in popularity in the early 90's. There are still a handful of gopher sites maintained by enthusiasts; you can learn more about its history at [floodgap](http://gopher.floodgap.com/gopher/).
 
 *What is flask-gopher?*
 
