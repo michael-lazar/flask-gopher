@@ -72,7 +72,7 @@ gopher = GopherExtension(app)
 def index():
     return gopher.render_menu(
         gopher.menu.title('My GopherHole'),
-        gopher.menu.submenu('Home', url_for('index')),
+        gopher.menu.dir('Home', url_for('index')),
         gopher.menu.info("Look Ma, it's a gopher server!"))
 
 if __name__ == '__main__':
