@@ -25,7 +25,7 @@ be formatted on the page to stand out from plain info lines.
 
 
 {{ 'Type 0 - Plain text file' | underline('-') }}
-{{ menu.file('bofh1.txt', url_for('static', filename='files/bofh1.txt')) }}
+{{ menu.text('bofh1.txt', url_for('static', filename='files/bofh1.txt')) }}
 
 
 {{ 'Type 4 - Macintosh BinHex file' | underline('-') }}
@@ -42,7 +42,7 @@ This is another binary file format for email attachments
 {{ menu.uuencoded('encoded.uue', url_for('static', filename='files/encoded.uue')) }}
 
 {{ 'Type 9 - Binary file' | underline('-') }}
-{{ menu.binary('hello.bin', url_for('static', filename='files/hello.bin')) }}
+{{ menu.bin('hello.bin', url_for('static', filename='files/hello.bin')) }}
 
 
 {{ 'Type g - GIF format graphics file' | underline('-') }}
@@ -69,7 +69,7 @@ This is another binary file format for email attachments
 
 
 {{ 'Type 1 - Gopher Menu' | underline('-')  }}
-{{ menu.submenu('Floodgap Systems', host='gopher.floodgap.com') }}
+{{ menu.dir('Floodgap Systems', host='gopher.floodgap.com') }}
 
 
 {{ 'Type 2 - CCSO Database' | underline('-') }}

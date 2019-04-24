@@ -622,6 +622,11 @@ class TestGopherMenu(unittest.TestCase):
         line = self.menu.title('Hello World')
         self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
 
+    def test_aliased_names(self):
+        self.assertEqual(self.menu.file('test'), self.menu.text('test'))
+        self.assertEqual(self.menu.submenu('test'), self.menu.dir('test'))
+        self.assertEqual(self.menu.binary('test'), self.menu.bin('test'))
+
 
 if __name__ == '__main__':
     unittest.main()

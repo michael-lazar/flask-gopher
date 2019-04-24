@@ -264,21 +264,26 @@ class GopherMenu:
 
         return self.TEMPLATE.format(type_code, text, selector, host, port)
 
-    file = partialmethod(entry, '0')
-    submenu = partialmethod(entry, '1')
+    text = partialmethod(entry, '0')
+    dir = partialmethod(entry, '1')
     ccso = partialmethod(entry, '2')
     binhex = partialmethod(entry, '4')
     archive = partialmethod(entry, '5')
     uuencoded = partialmethod(entry, '6')
     query = partialmethod(entry, '7')
     telnet = partialmethod(entry, '8')
-    binary = partialmethod(entry, '9')
+    bin = partialmethod(entry, '9')
     gif = partialmethod(entry, 'g')
     image = partialmethod(entry, 'I')
     doc = partialmethod(entry, 'd')
     sound = partialmethod(entry, 's')
     video = partialmethod(entry, ';')
     info = partialmethod(entry, 'i', selector='fake', host='example.com', port=0)
+
+    # Deprecated aliases
+    file = text
+    submenu = dir
+    binary = bin
 
     def html(self, text, url):
         """
@@ -794,7 +799,7 @@ class GopherDirectory:
                 options = {self.url_token: folder.parent}
             else:
                 options = {}
-            lines.append(menu.submenu('..', url_for(self.view_name, **options)))
+            lines.append(menu.dir('..', url_for(self.view_name, **options)))
 
         for file in sorted(Path(abs_folder).iterdir()):
             relative_file = folder / file.name
@@ -820,21 +825,21 @@ class GopherDirectory:
         Guess the gopher menu type for the given file.
         """
         if file.is_dir():
-            return menu.submenu
+            return menu.dir
 
         mime_type, encoding = self.mimetypes.guess_type(str(file))
         if encoding:
             return menu.archive
 
         if not mime_type:
-            return menu.file
+            return menu.text
 
         menu_type_map = [
-            ('text/', menu.file),
+            ('text/', menu.text),
             ('image/gif', menu.gif),
             ('image/', menu.image),
             ('application/pdf', menu.doc),
-            ('application/', menu.binary),
+            ('application/', menu.bin),
             ('audio/', menu.sound),
             ('video/', menu.video),
         ]
@@ -842,7 +847,7 @@ class GopherDirectory:
             if mime_type.startswith(mime_type_prefix):
                 return mime_menu_type
 
-        return menu.file
+        return menu.text
 
 
 class GopherSessionInterface(SecureCookieSessionInterface):
