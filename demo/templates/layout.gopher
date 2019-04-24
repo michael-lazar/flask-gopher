@@ -1,4 +1,4 @@
-{{ menu.submenu('Home', url_for('index')) }}
+{{ menu.dir('Home', url_for('index')) }}
 
 {% block body %}{% endblock %}
 

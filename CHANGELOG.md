@@ -1,3 +1,16 @@
+### Unreleased
+
+- Renamed the following methods:
+
+  - ``menu.submenu()`` -> ``menu.dir()``
+  - ``menu.file()`` -> ``menu.text()``
+  - ``menu.binary()`` -> ``menu.bin()``
+  
+This was done as a personal preference because I found the original method
+names to be overly verbose and hard to remember. The original methods will
+remain for backwards compatibility, but they will no longer be listed in
+the documentation.
+
 ### v2.1.1 (2019-04-10)
 
 - Add a helper method to generate a gopher menu from a directory.

@@ -177,12 +177,12 @@ def demo_form(field):
     # Add the buttons at the bottom of the form
     form.append('')
     if request_query:
-        form.append(gopher.menu.submenu('clear', url_for('demo_form')))
+        form.append(gopher.menu.dir('clear', url_for('demo_form')))
     else:
         form.append('clear')
     if request_query.keys() == form_fields.keys():
         url = url_for('demo_form', field='submit', **request_query)
-        form.append(gopher.menu.submenu('submit', url))
+        form.append(gopher.menu.dir('submit', url))
     else:
         form.append('submit')
 

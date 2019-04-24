@@ -107,7 +107,7 @@ Figlet engine powered by the pyfiglet library
 {{ tabulate(table_data, headers='firstrow', tablefmt='grid') | center}}
 
 Table engine powered by the tabulate library
-{{ menu.submenu('View all table styles', url_for('tables')) }}
+{{ menu.dir('View all table styles', url_for('tables')) }}
 
 
 

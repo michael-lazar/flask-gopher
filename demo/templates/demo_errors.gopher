@@ -3,18 +3,18 @@
 {{ 'Error Handling Gallery' | banner(width=27)  | center }}
 
 Trigger a 403 forbidden error
-{{ menu.submenu("Top-secret menu", url_for('error', code=403, path='menu')) }}
-{{ menu.file("Top-secret text file", url_for('error', code=403, path='file.txt')) }}
-{{ menu.binary("Top-secret binary file", url_for('error', code=403, path='file.bin')) }}
+{{ menu.dir("Top-secret menu", url_for('error', code=403, path='menu')) }}
+{{ menu.text("Top-secret text file", url_for('error', code=403, path='file.txt')) }}
+{{ menu.bin("Top-secret binary file", url_for('error', code=403, path='file.bin')) }}
 
 Trigger a 404 not found error
-{{ menu.submenu("Invalid menu", '/invalid/menu') }}
-{{ menu.file("Invalid text file", '/invalid/doc.txt') }}
-{{ menu.binary("Invalid binary file", '/invalid/doc.bin') }}
+{{ menu.dir("Invalid menu", '/invalid/menu') }}
+{{ menu.text("Invalid text file", '/invalid/doc.txt') }}
+{{ menu.bin("Invalid binary file", '/invalid/doc.bin') }}
 
 Trigger a 500 server error
-{{ menu.submenu("Calculate 1/0", url_for('error', code=500, path='menu')) }}
-{{ menu.file("Calculate 1/0", url_for('error', code=500, path='file.txt')) }}
-{{ menu.binary("Calculate 1/0", url_for('error', code=500, path='file.bin')) }}
+{{ menu.dir("Calculate 1/0", url_for('error', code=500, path='menu')) }}
+{{ menu.text("Calculate 1/0", url_for('error', code=500, path='file.txt')) }}
+{{ menu.bin("Calculate 1/0", url_for('error', code=500, path='file.bin')) }}
 
 {% endblock %}

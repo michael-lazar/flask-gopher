@@ -95,8 +95,8 @@ Flask-Gopher provides several helper methods for constructing gopher menu lines:
 
 | Method        | Link Descriptor     | Meaning  |
 | ------------- | ------------------- | -------- |
-| menu.file | 0 | Plain text file |
-| menu.submenu | 1 | Gopher menu |
+| menu.text | 0 | Plain text file |
+| menu.dir | 1 | Gopher menu |
 | menu.ccso | 2 | CCSO database; other databases |
 | menu.error | 3 | Error message |
 | menu.binhex | 4 | Macintosh BinHex file |
@@ -104,7 +104,7 @@ Flask-Gopher provides several helper methods for constructing gopher menu lines:
 | menu.uuencoded | 6 | UUEncoded file |
 | menu.query | 7 | Search query |
 | menu.telnet | 8 | Telnet session |
-| menu.binary | 9 | Binary file |
+| menu.bin | 9 | Binary file |
 | menu.gif | g | GIF format graphics file |
 | menu.image | I | Other Image file |
 | menu.doc | d | Word processing document (ps, pdf, doc) |
@@ -121,10 +121,10 @@ Most of these methods require a text description for the link, and will accept a
 def index():
     return gopher.render_menu(
         # Link to an internal gopher menu
-        gopher.menu.submenu('Home', '/'),
+        gopher.menu.dir('Home', '/'),
         
         # Link to an external gopher menu
-        gopher.menu.submenu('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
+        gopher.menu.dir('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
         
         # Link to a static file, using flask.url_for() to build a relative path
         gopher.menu.image('Picture of a cat', url_for('static', filename='cat.png')),
@@ -170,7 +170,7 @@ You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gophe
 ```
 {{ 'Centered Title' | underline('-') | center }}
 
-{{ gopher.menu.submenu('Home', url_for('index')) }}
+{{ gopher.menu.dir('Home', url_for('index')) }}
 
 Hello from my gopher template!
 Your IP address is {{ request.remote_addr }}
