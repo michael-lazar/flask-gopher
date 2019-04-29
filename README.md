@@ -132,13 +132,13 @@ def index():
         # Link to an external web page
         gopher.menu.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
         
-        # Info lines display text in the menu
+        # A text info line
         gopher.menu.info('This is informational text'),
 
         # Plain text will be converted into info lines
         "\n    There's no place\n    like ::1\n",
 
-        # Or you can build the lines manually
+        # You can also format your links manually
         "0About this page\t/about.txt\t127.0.0.1\t8007")
 ```
 
