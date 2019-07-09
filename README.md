@@ -142,7 +142,7 @@ def index():
         "0About this page\t/about.txt\t127.0.0.1\t8007")
 ```
 
-Here's what the rendered menu looks like:
+Here's what the rendered menu looks like as plain text:
 
 ```
 $ curl gopher://localhost:8007
@@ -157,6 +157,8 @@ i    like ::1	fake	example.com	0
 i 	fake	example.com	0
 0About this page	/about.txt	127.0.0.1	8007
 ```
+
+And here's how it looks when viewed using a gopher client:
 
 <p align="center">
   <img alt="gopher" src="resources/example_menu.png"/>
