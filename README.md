@@ -158,7 +158,7 @@ i 	fake	example.com	0
 0About this page	/about.txt	127.0.0.1	8007
 ```
 
-And here's how it looks when viewed using a gopher client:
+And here's what it looks like using a gopher client:
 
 <p align="center">
   <img alt="gopher" src="resources/example_menu.png"/>
