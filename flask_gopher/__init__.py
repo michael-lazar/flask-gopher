@@ -10,7 +10,7 @@ r"""
 __title__ = 'Flask-Gopher'
 __author__ = 'Michael Lazar'
 __license__ = 'GPL-3.0'
-__copyright__ = '(c) 2018 Michael Lazar'
+__copyright__ = '(c) 2020 Michael Lazar'
 
 from .__version__ import __version__
 

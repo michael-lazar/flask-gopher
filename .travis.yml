@@ -1,17 +1,17 @@
 language: python
 sudo: required
-dist: xenial
 
 env:
   - FLASK=0.11
   - FLASK=0.12
   - FLASK=1.0
+  - FLASK=1.1
 
 python:
-  - 3.4
   - 3.5
   - 3.6
   - 3.7
+  - 3.8
 
 before_install:
   - pip install coveralls
