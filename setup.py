@@ -23,6 +23,7 @@ setuptools.setup(
     author_email='lazar.michael22@gmail.com',
     description='A Flask extension to support the Gopher Protocol',
     long_description=long_description(),
+    long_description_content_type='text/markdown',
     packages=['flask_gopher'],
     zip_safe=False,
     include_package_data=True,
