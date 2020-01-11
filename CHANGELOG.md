@@ -1,5 +1,8 @@
-### Unreleased
+### v2.2.0 (2020-01-11)
 
+- Added support for python 3.8
+- Dropped support for python 3.4
+- Added support for flask 1.1
 - Renamed the following methods:
 
   - ``menu.submenu()`` -> ``menu.dir()``

@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
 ## Installation
 
-This package requires **Python v3.4 or higher**
+This package requires **Python v3.5 or higher**
 
 ```
 pip install flask_gopher

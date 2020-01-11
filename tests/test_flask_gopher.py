@@ -22,10 +22,6 @@ logging.getLogger('werkzeug').setLevel(60)
 
 class TestFunctional(unittest.TestCase):
     """
-    Because the flask_gopher extension is built on hacking the WSGI protocol
-    and the werkzeug HTTP server, I feel that the only way to test that it's
-    working properly is through functional testing.
-
     This class will spin up a complete test flask application and serve it on a
     local TCP port in a new thread. The tests will send real gopher connection
     strings to the server and check the validity of the response body from
