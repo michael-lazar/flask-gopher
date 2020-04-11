@@ -1,3 +1,7 @@
+### v2.2.0 (2020-04-11)
+
+- Pin the werkzeug dependency to avoid breaking dependency changes.
+
 ### v2.2.0 (2020-01-11)
 
 - Added support for python 3.8
