@@ -31,7 +31,7 @@ setuptools.setup(
     install_requires=[
         'Flask>=0.11',
         # pyfiglet v0.8.0 removes a bunch of fonts due to licensing issues :(
-        'pyfiglet<=0.7.6',
+        'pyfiglet<0.9.0',
         'tabulate',
         'pyopenssl',
         # https://github.com/michael-lazar/flask-gopher/issues/9
