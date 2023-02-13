@@ -23,15 +23,15 @@
 
 ## Contents
 
-* [Demo](#demo)  
-* [About](#about)  
+* [Demo](#demo)
+* [About](#about)
 * [Quickstart](#quickstart)
-* [Installation](#installation)  
-* [Building Gopher Menus](#building-gopher-menus)  
+* [Installation](#installation)
+* [Building Gopher Menus](#building-gopher-menus)
 * [Using Templates](#using-templates)
 * [Gopher and WSGI](#gopher-and-wsgi)
 * [TLS Support](#tls-support)
-* [Gopher Protocol References](#gopher-protocol-references)  
+* [Gopher Protocol References](#gopher-protocol-references)
 
 ## Demo
 
@@ -122,16 +122,16 @@ def index():
     return gopher.render_menu(
         # Link to an internal gopher menu
         gopher.menu.dir('Home', '/'),
-        
+
         # Link to an external gopher menu
         gopher.menu.dir('XKCD comics', '/fun/xkcd', host='gopher.floodgap.com', port=70),
-        
+
         # Link to a static file, using flask.url_for() to build a relative path
         gopher.menu.image('Picture of a cat', url_for('static', filename='cat.png')),
-        
+
         # Link to an external web page
         gopher.menu.html('Project source', 'https://github.com/michael-lazar/flask-gopher'),
-        
+
         # A text info line
         gopher.menu.info('This is informational text'),
 
@@ -237,7 +237,7 @@ def index():
     if flask.request.scheme == 'gopher':
         return "iThis was a gopher request\tfake\texample.com\t0\r\n"
     else:
-        return "<html><body>This was an HTTP request</body></html>" 
+        return "<html><body>This was an HTTP request</body></html>"
 ```
 
 ## TLS Support
@@ -253,7 +253,7 @@ from flask_gopher import make_gopher_ssl_server
 
 app = ...
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     server = make_gopher_ssl_server(
         '0.0.0.0',
         70,

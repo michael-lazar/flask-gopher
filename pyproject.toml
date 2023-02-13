@@ -1,0 +1,6 @@
+[tool.black]
+line-length = 100
+
+[tool.pytest.ini_options]
+addopts = "-v"
+python_files = ["tests.py", "test_*.py"]

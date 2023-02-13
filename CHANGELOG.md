@@ -1,3 +1,8 @@
+## v3.0.0 (unreleased)
+
+- Added support for python 3.9, 3.10, 3.11
+- Dropped support for python 3.5, 3.6
+
 ### v2.2.1 (2020-04-11)
 
 - Pin the werkzeug dependency to avoid breaking dependency changes.
@@ -12,7 +17,7 @@
   - ``menu.submenu()`` -> ``menu.dir()``
   - ``menu.file()`` -> ``menu.text()``
   - ``menu.binary()`` -> ``menu.bin()``
-  
+
 This was done as a personal preference because I found the original method
 names to be overly verbose and hard to remember. The original methods will
 remain for backwards compatibility, but they will no longer be listed in
