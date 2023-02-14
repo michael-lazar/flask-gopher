@@ -162,33 +162,33 @@ def demo_form(field):
         request_query[field] = request.environ["SEARCH_TEXT"]
 
     # Build the form using the currently populated fields
-    form = []
+    lines = []
     for name, description in form_fields.items():
         if name in request_query:
-            form.append(f"{description:<13}: {request_query[name]}")
+            lines.append(f"{description:<13}: {request_query[name]}")
         else:
             url = url_for("demo_form", field=name, **request_query)
-            form.append(gopher.menu.query(f"{description:<13}:", url))
+            lines.append(gopher.menu.query(f"{description:<13}:", url))
 
     # Add the buttons at the bottom of the form
-    form.append("")
+    lines.append("")
     if request_query:
-        form.append(gopher.menu.dir("clear", url_for("demo_form")))
+        lines.append(gopher.menu.dir("clear", url_for("demo_form")))
     else:
-        form.append("clear")
+        lines.append("clear")
     if request_query.keys() == form_fields.keys():
         url = url_for("demo_form", field="submit", **request_query)
-        form.append(gopher.menu.dir("submit", url))
+        lines.append(gopher.menu.dir("submit", url))
     else:
-        form.append("submit")
+        lines.append("submit")
 
     # Show the query data if the "submit" button was pressed
     if field == "submit":
-        form.append("")
-        form.append("Submitted form data:")
-        form.append(json.dumps(request_query, indent=4, sort_keys=True))
+        lines.append("")
+        lines.append("Submitted form data:")
+        lines.append(json.dumps(request_query, indent=4, sort_keys=True))
 
-    form = "\r\n".join(form)
+    form = "\r\n".join(lines)
     return gopher.render_menu_template("demo_form.gopher", form=form)
 
 
