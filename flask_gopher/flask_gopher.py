@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 from flask import _request_ctx_stack as request_ctx_stack  # noqa
 from flask import current_app, render_template, request, url_for
-from flask.helpers import safe_join, send_file
+from flask.helpers import send_file
 from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
 from itsdangerous import BadSignature, URLSafeSerializer
 from jinja2.filters import escape
@@ -22,6 +22,7 @@ from pyfiglet import FigletError, figlet_format
 from tabulate import tabulate
 from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.local import LocalProxy
+from werkzeug.security import safe_join
 from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
 
 from .__version__ import __version__
