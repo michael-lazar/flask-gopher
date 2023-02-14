@@ -9,9 +9,10 @@ from datetime import datetime
 from functools import partialmethod
 from itertools import zip_longest
 from pathlib import Path
+from typing import cast
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from flask import _request_ctx_stack as request_ctx_stack
+from flask import _request_ctx_stack as request_ctx_stack  # noqa
 from flask import current_app, render_template, request, url_for
 from flask.helpers import safe_join, send_file
 from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
@@ -21,7 +22,7 @@ from pyfiglet import FigletError, figlet_format
 from tabulate import tabulate
 from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.local import LocalProxy
-from werkzeug.serving import WSGIRequestHandler
+from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
 
 from .__version__ import __version__
 
@@ -554,7 +555,12 @@ class GopherExtension:
         return self.render_menu(template_string)
 
     def serve_directory(
-        self, local_directory, view_name, url_token="filename", show_timestamp=True, width=None
+        self,
+        local_directory,
+        view_name,
+        url_token="filename",
+        show_timestamp=True,
+        width=None,
     ):
         """
         This is a convenience wrapper around the GopherDirectory class.
@@ -631,6 +637,8 @@ class GopherRequestHandler(WSGIRequestHandler):
         https://tools.ietf.org/html/rfc1436
     """
 
+    search_text: str
+
     @property
     def server_version(self):
         return "Flask-Gopher/" + __version__
@@ -669,7 +677,8 @@ class GopherRequestHandler(WSGIRequestHandler):
             # header or the SERVER_NAME env variable to match it.
             # Go look at werkzeug.routing.Map.bind_to_environ()
             try:
-                server_name = self.server.app.config.get("SERVER_NAME")
+                server = cast(BaseWSGIServer, self.server)
+                server_name = server.app.config.get("SERVER_NAME")
             except Exception:
                 pass
             else:
@@ -698,7 +707,7 @@ class GopherRequestHandler(WSGIRequestHandler):
         self.close_connection = True
         self.request_version = "gopher"  # Instead of HTTP/1.1, etc
         self.command = "GET"
-        self.headers = {}
+        self.headers = self.MessageClass()
 
         url_parts = self.requestline.split("\t")
         self.path = url_parts[0] or "/"
@@ -735,7 +744,12 @@ class GopherDirectory:
     timestamp_fmt = "%Y-%m-%d %H:%M:%S"
 
     def __init__(
-        self, local_directory, view_name, url_token="filename", show_timestamp=False, width=70
+        self,
+        local_directory,
+        view_name,
+        url_token="filename",
+        show_timestamp=False,
+        width=70,
     ):
         """
         Args:
@@ -866,9 +880,15 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         """
         if not app.secret_key:
             return None
-        signer_kwargs = dict(key_derivation=self.key_derivation, digest_method=self.digest_method)
+
         return URLSafeSerializer(
-            app.secret_key, salt=self.salt, serializer=self.serializer, signer_kwargs=signer_kwargs
+            app.secret_key,
+            salt=self.salt,
+            serializer=self.serializer,
+            signer_kwargs={
+                "key_derivation": self.key_derivation,
+                "digest_method": self.digest_method,
+            },
         )
 
     def open_session(self, app, request):
@@ -919,7 +939,7 @@ class GopherSessionInterface(SecureCookieSessionInterface):
             """
             url_parts = urlsplit(matchobj.group("selector"))
             query = parse_qs(url_parts.query)
-            query["_session"] = [session_str]
+            query[b"_session"] = [session_str]
             new_query = urlencode(query, doseq=True)
             new_url = urlunsplit(
                 [url_parts.scheme, url_parts.netloc, url_parts.path, new_query, url_parts.fragment]
