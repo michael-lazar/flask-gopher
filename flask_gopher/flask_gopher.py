@@ -20,7 +20,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 from jinja2.filters import escape
 from pyfiglet import FigletError, figlet_format
 from tabulate import tabulate
-from werkzeug.exceptions import BadRequest, HTTPException
+from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.local import LocalProxy
 from werkzeug.security import safe_join
 from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
@@ -781,6 +781,9 @@ class GopherDirectory:
         can only be invoked from inside of a flask view.
         """
         abs_filename = safe_join(self.local_directory, filename)
+        if abs_filename is None:
+            raise NotFound()
+
         if not os.path.isabs(abs_filename):
             abs_filename = os.path.join(current_app.root_path, abs_filename)
 
@@ -790,7 +793,7 @@ class GopherDirectory:
             data = self._parse_directory(filename, abs_filename)
             return self.result_class(True, data)
         else:
-            raise BadRequest()
+            raise NotFound()
 
     def _parse_directory(self, folder, abs_folder):
         """

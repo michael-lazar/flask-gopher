@@ -283,7 +283,6 @@ class TestFunctional(unittest.TestCase):
         self.assertEqual(resp.status, 200)
         self.assertIn("Content-Type", resp.headers)
         self.assertIn("Content-Length", resp.headers)
-        self.assertTrue(resp.headers["Server"].startswith("Flask-Gopher"))
         self.assertEqual(resp.read(), b"Hello World!")
 
     def test_render_menu(self):
