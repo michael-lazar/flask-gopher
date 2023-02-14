@@ -24,7 +24,6 @@ This page's source code is open source and available for download at:
 {{ menu.dir('Directory Listings', url_for('demo_directory')) }}
 {{ menu.dir('Interactive Forms', url_for('demo_form')) }}
 {{ menu.dir('Client Sessions', url_for('demo_session')) }}
-{{ menu.dir('SSL Encryption', url_for('demo_ssl')) }}
 {{ menu.dir('Server Environment', url_for('demo_environ')) }}
 
 {% endblock %}
