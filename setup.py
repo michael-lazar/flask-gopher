@@ -38,6 +38,8 @@ setuptools.setup(
         "pyopenssl",
         # https://github.com/michael-lazar/flask-gopher/issues/9
         "werkzeug<1.0.0",
+        # https://stackoverflow.com/questions/72191560
+        "markupsafe==2.0.1",
     ],
     extras_require={
         "test": [
