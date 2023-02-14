@@ -365,7 +365,7 @@ class TestFunctional(unittest.TestCase):
         Should be able to serve a file from a custom directory.
         """
         resp = self.send_data(b"/directory/test_file.txt\r\n")
-        self.assertEqual(resp, b"File Contents")
+        self.assertEqual(resp, b"File Contents\n")
 
         # Should not be able to break out of the directory
         resp = self.send_data(b"/directory/..\r\n")
