@@ -39,7 +39,13 @@ setuptools.setup(
         # https://github.com/michael-lazar/flask-gopher/issues/9
         "werkzeug<1.0.0",
     ],
-    test_suite="tests",
+    extras_require={
+        "test": [
+            "pytest",
+            "mypy",
+            "types-tabulate",
+        ],
+    },
     classifiers=[
         "Environment :: Web Environment",
         "Intended Audience :: Developers",

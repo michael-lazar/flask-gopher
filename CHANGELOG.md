@@ -5,8 +5,9 @@ over gopher. The code for this was particularly annoying to
 monkey-patch, and the feature never gained significant adoption
 beyond a proof-of-concept.
 
-- Added support for python 3.9, 3.10, 3.11
-- Dropped support for python 3.5, 3.6
+- Added support for python 3.9, 3.10, 3.11.
+- Dropped support for python 3.5, 3.6.
+- Migrated build from travis.ci to github actions.
 - Removed the `make_gopher_ssl_server` function.
 - Removed the following WSGI server classes:
   - ``GopherBaseWSGIServer``
