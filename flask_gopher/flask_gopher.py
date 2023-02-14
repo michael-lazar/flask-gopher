@@ -374,21 +374,22 @@ class GopherExtension:
         </HTML>
         """
 
-    def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
-        self.width = None
-        self.show_stack_trace = None
+    DEFAULT_WIDTH = 70
 
-        self.formatter = None
+    def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
+        self.show_stack_trace = None
 
         self.menu_class = menu_class
         self.formatter_class = formatter_class
 
-        self.app = app
         if app is not None:
             self.init_app(app)
+        else:
+            self.width = self.DEFAULT_WIDTH
+            self.formatter = self.formatter_class(self.width)
 
     def init_app(self, app):
-        self.width = app.config.setdefault("GOPHER_WIDTH", 70)
+        self.width = app.config.setdefault("GOPHER_WIDTH", self.DEFAULT_WIDTH)
         self.show_stack_trace = app.config.setdefault("GOPHER_SHOW_STACK_TRACE", False)
 
         self.formatter = self.formatter_class(self.width)
@@ -740,7 +741,7 @@ class GopherDirectory:
                 return file
     """
 
-    result_class = namedtuple("file", ["is_directory", "data"])
+    result_class = namedtuple("result_class", ["is_directory", "data"])
     timestamp_fmt = "%Y-%m-%d %H:%M:%S"
 
     def __init__(
@@ -939,7 +940,7 @@ class GopherSessionInterface(SecureCookieSessionInterface):
             """
             url_parts = urlsplit(matchobj.group("selector"))
             query = parse_qs(url_parts.query)
-            query[b"_session"] = [session_str]
+            query["_session"] = [session_str]  # noqa
             new_query = urlencode(query, doseq=True)
             new_url = urlunsplit(
                 [url_parts.scheme, url_parts.netloc, url_parts.path, new_query, url_parts.fragment]
