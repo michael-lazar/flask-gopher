@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mimetypes
 import os
 import re
@@ -22,17 +24,14 @@ from tabulate import tabulate
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.local import LocalProxy
 from werkzeug.security import safe_join
-from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
+from werkzeug.serving import WSGIRequestHandler
 
 from .__version__ import __version__
 
-
-@LocalProxy
-def menu():
-    """
-    Shortcut for gopher.menu
-    """
-    return current_app.extensions["gopher"].menu
+"""
+Shortcut for gopher.menu
+"""
+menu = cast("GopherMenu", LocalProxy(lambda: current_app.extensions["gopher"].menu))
 
 
 def render_menu(*lines):
@@ -678,8 +677,7 @@ class GopherRequestHandler(WSGIRequestHandler):
             # header or the SERVER_NAME env variable to match it.
             # Go look at werkzeug.routing.Map.bind_to_environ()
             try:
-                server = cast(BaseWSGIServer, self.server)
-                server_name = server.app.config.get("SERVER_NAME")
+                server_name = self.server.app.config.get("SERVER_NAME")  # type: ignore
             except Exception:
                 pass
             else:
