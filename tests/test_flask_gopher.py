@@ -21,6 +21,7 @@ from flask_gopher import (
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
+
 # Disable WSGI server logs spamming the unit test output
 logging.getLogger("werkzeug").setLevel(60)
 
@@ -45,7 +46,7 @@ class TestFunctional(unittest.TestCase):
         """
         Spin up a fully-functional test gopher application in a new thread.
         """
-        cls.app = app = Flask(__name__, template_folder=TEST_DIR)
+        cls.app = app = Flask(__name__, template_folder=os.path.join(TEST_DIR, "templates"))
         cls.app.logger.setLevel(60)  # Disable Flask exception logging
 
         cls.gopher = gopher = GopherExtension(app)
@@ -99,7 +100,11 @@ class TestFunctional(unittest.TestCase):
         def internal_error():
             return 1 // 0
 
-        test_directory = gopher.serve_directory(TEST_DIR, "directory", show_timestamp=False)
+        test_directory = gopher.serve_directory(
+            os.path.join(TEST_DIR, "files"),
+            "directory",
+            show_timestamp=False,
+        )
 
         @app.route("/directory")
         @app.route("/directory/<path:filename>")
