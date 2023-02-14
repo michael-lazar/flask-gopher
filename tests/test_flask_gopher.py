@@ -2,19 +2,18 @@ import json
 import logging
 import os
 import socket
-import ssl
 import unittest
 from threading import Thread
 from urllib.request import Request, urlopen
 
 from flask import Flask, request, session, url_for
+from werkzeug.serving import make_server
 
 from flask_gopher import (
     GopherExtension,
     GopherMenu,
     GopherRequestHandler,
     TextFormatter,
-    make_gopher_ssl_server,
     menu,
     render_menu,
     render_menu_template,
@@ -34,8 +33,10 @@ class TestFunctional(unittest.TestCase):
     end-to-end.
     """
 
-    app = gopher = server = thread = None
-
+    app = None
+    gopher = None
+    server = None
+    thread = None
     threaded = False
     processes = 1
 
@@ -69,10 +70,6 @@ class TestFunctional(unittest.TestCase):
         @app.route("/template")
         def template():
             return render_menu_template("test_template.gopher", items=range(3))
-
-        @app.route("/ssl")
-        def ssl():
-            return str(request.environ["SECURE"])
 
         @app.route("/echo/<string>")
         def echo(string):
@@ -123,14 +120,13 @@ class TestFunctional(unittest.TestCase):
             session["name"] = "fran"
             return resp
 
-        cls.server = make_gopher_ssl_server(
-            "127.0.0.1",
-            0,
-            app,
+        cls.server = make_server(
+            host="127.0.0.1",
+            port=0,
+            app=app,
             threaded=cls.threaded,
             processes=cls.processes,
             request_handler=GopherRequestHandler,
-            ssl_context="adhoc",
         )
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
@@ -144,13 +140,11 @@ class TestFunctional(unittest.TestCase):
         cls.thread.join(timeout=5)
 
     @classmethod
-    def send_data(cls, data, use_ssl=False):
+    def send_data(cls, data):
         """
         Send byte data to the server using a TCP/IP socket.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if use_ssl:
-                s = ssl.wrap_socket(s)
             s.connect((cls.server.host, cls.server.port))
             s.sendall(data)
 
@@ -162,8 +156,6 @@ class TestFunctional(unittest.TestCase):
                     break
                 chunks.append(data)
 
-            if use_ssl:
-                s.close()
             return b"".join(chunks)
 
     def test_empty_request(self):
@@ -280,9 +272,9 @@ class TestFunctional(unittest.TestCase):
         Regular HTTP requests should still work and headers should be passed
         """
         url = f"http://{self.server.host}:{self.server.port}/"
-        request = Request(url)
-        request.add_header("HOST", "gopher.server.com:7000")
-        resp = urlopen(request)
+        req = Request(url)
+        req.add_header("HOST", "gopher.server.com:7000")
+        resp = urlopen(req)
         self.assertEqual(resp.status, 200)
         self.assertIn("Content-Type", resp.headers)
         self.assertIn("Content-Length", resp.headers)
@@ -368,18 +360,6 @@ class TestFunctional(unittest.TestCase):
         text = text.format(session_str=session_str)
         self.assertEqual(resp, text.encode())
 
-    def test_ssl_connection(self):
-        """
-        Clients should be able to optionally negotiate SSL connections.
-        """
-        # Insecure connection
-        resp = self.send_data(b"/ssl\r\n")
-        self.assertEqual(resp, b"False")
-
-        # Secure connection
-        resp = self.send_data(b"/ssl\r\n", use_ssl=True)
-        self.assertEqual(resp, b"True")
-
     def test_directory_load_file(self):
         """
         Should be able to serve a file from a custom directory.
@@ -419,7 +399,6 @@ class TestFunctionalThreaded(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Open a connection and but don't stream any data
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
 
             # Open a second connection before finishing the first one
@@ -438,7 +417,6 @@ class TestFunctionalThreaded(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Start streaming data but don't finish
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
             s.sendall(b"/echo/requ")
 
@@ -473,7 +451,6 @@ class TestFunctionalForking(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Open a connection and but don't stream any data
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
 
             # Open a second connection before finishing the first one
@@ -492,7 +469,6 @@ class TestFunctionalForking(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Start streaming data but don't finish
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
             s.sendall(b"/echo/requ")
 
