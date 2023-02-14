@@ -585,11 +585,13 @@ class GopherExtension:
         if not _external:
             return url_for(endpoint, **values)
 
-        values["_scheme"] = "gopher"
-        url = url_for(endpoint, _external=_external, **values)
-        parts = url.split("/")
-        parts.insert(3, str(_type))
-        url = "/".join(parts)
+        url = url_for(endpoint, _external=True, **values)
+        if request.scheme == "gopher":
+            scheme, rest = url.split(":", maxsplit=1)
+            url = f"gopher:{rest}"
+            parts = url.split("/")
+            parts.insert(3, str(_type))
+            url = "/".join(parts)
         return url
 
 
