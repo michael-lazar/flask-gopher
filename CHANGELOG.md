@@ -1,7 +1,18 @@
 ## v3.0.0 (unreleased)
 
+This version removes the ability to establish TLS connections
+over gopher. The code for this was particularly annoying to
+monkey-patch, and the feature never gained significant adoption
+beyond a proof-of-concept.
+
 - Added support for python 3.9, 3.10, 3.11
 - Dropped support for python 3.5, 3.6
+- Removed the `make_gopher_ssl_server` function.
+- Removed the following WSGI server classes:
+  - ``GopherBaseWSGIServer``
+  - ``GopherSimpleWSGIServer``
+  - ``GopherThreadedWSGIServer``
+  - ``GopherForkingWSGIServer``
 
 ### v2.2.1 (2020-04-11)
 

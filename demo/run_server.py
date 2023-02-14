@@ -23,7 +23,7 @@ from flask import Flask, abort, request, session, url_for
 from pyfiglet import FigletFont
 from tabulate import tabulate_formats
 
-from flask_gopher import GopherExtension, GopherRequestHandler, make_gopher_ssl_server
+from flask_gopher import GopherExtension, GopherRequestHandler
 
 ROOT_DIR = os.path.dirname(__file__)
 
@@ -133,12 +133,6 @@ def demo_formatting():
     return gopher.render_menu_template("demo_formatting.gopher", table_data=table_data)
 
 
-@app.route("/demo-ssl")
-def demo_ssl():
-    secure = request.environ["SECURE"]
-    return gopher.render_menu_template("demo_ssl.gopher", secure=secure)
-
-
 @app.route("/demo-environ")
 def demo_environ():
     environ_table = [("Field", "Value")]
@@ -199,26 +193,10 @@ def demo_form(field):
 
 
 if __name__ == "__main__":
-
-    if app.config.get("SSL_CERTIFICATE_FILE"):
-        ssl_context = (app.config["SSL_CERTIFICATE_FILE"], app.config["SSL_CERTIFICATE_KEY_FILE"])
-
-        server = make_gopher_ssl_server(
-            host=app.config["HOST"],
-            port=app.config["PORT"],
-            app=app,
-            threaded=app.config["THREADED"],
-            processes=app.config["PROCESSES"],
-            ssl_context=ssl_context,
-            request_handler=GopherRequestHandler,
-        )
-        server.serve_forever()
-
-    else:
-        app.run(
-            host=app.config["HOST"],
-            port=app.config["PORT"],
-            threaded=app.config["THREADED"],
-            processes=app.config["PROCESSES"],
-            request_handler=GopherRequestHandler,
-        )
+    app.run(
+        host=app.config["HOST"],
+        port=app.config["PORT"],
+        threaded=app.config["THREADED"],
+        processes=app.config["PROCESSES"],
+        request_handler=GopherRequestHandler,
+    )

@@ -21,7 +21,6 @@ from .flask_gopher import (
     GopherRequestHandler,
     GopherSessionInterface,
     TextFormatter,
-    make_gopher_ssl_server,
     menu,
     render_menu,
     render_menu_template,

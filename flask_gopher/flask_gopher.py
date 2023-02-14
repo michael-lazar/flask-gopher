@@ -1,8 +1,6 @@
 import mimetypes
 import os
 import re
-import socket
-import ssl
 import textwrap
 import traceback
 import weakref
@@ -23,15 +21,7 @@ from pyfiglet import FigletError, figlet_format
 from tabulate import tabulate
 from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.local import LocalProxy
-from werkzeug.serving import (
-    BaseWSGIServer,
-    ForkingMixIn,
-    ThreadingMixIn,
-    WSGIRequestHandler,
-    can_fork,
-    generate_adhoc_ssl_context,
-    load_ssl_context,
-)
+from werkzeug.serving import WSGIRequestHandler
 
 from .__version__ import __version__
 
@@ -667,7 +657,7 @@ class GopherRequestHandler(WSGIRequestHandler):
         if self.request_version == "gopher":
             environ["wsgi.url_scheme"] = "gopher"
             environ["SEARCH_TEXT"] = self.search_text
-            environ["SECURE"] = isinstance(self.request, ssl.SSLSocket)
+            environ["SECURE"] = False
 
             # Flask has a sanity check where if app.config['SERVER_NAME'] is
             # defined, it has to match either the HTTP host header or the
@@ -717,10 +707,6 @@ class GopherRequestHandler(WSGIRequestHandler):
             # the werkzeug router does!
             self.path = "/" + self.path
         self.search_text = url_parts[1] if len(url_parts) > 1 else ""
-
-        # Add a token to the requestline for server logging
-        if isinstance(self.request, ssl.SSLSocket):
-            self.requestline = "<SSL> " + self.requestline
 
         return True
 
@@ -950,194 +936,3 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         data = bytes.decode(response.data)
         new_data = re.sub(url_pattern, on_match, data, flags=re.M)
         response.data = new_data.encode()
-
-
-class GopherBaseWSGIServer(BaseWSGIServer):
-    """
-    WSGI server extension that enables SSL sockets on a per-connection basis.
-
-    This is achieved by peeking at the first byte of each socket connection.
-    If the first byte is a SYN, it indicates the start of an SSL handshake.
-    """
-
-    def __init__(
-        self, host, port, app, handler=None, passthrough_errors=False, ssl_context=None, fd=None
-    ):
-        """
-        Override the server initialization to save the SSL context without
-        immediately wrapping the socket in an SSL connection.
-        """
-        super().__init__(host, port, app, handler, passthrough_errors, fd=fd)
-
-        if ssl_context is not None:
-            if isinstance(ssl_context, tuple):
-                ssl_context = load_ssl_context(*ssl_context)
-            if ssl_context == "adhoc":
-                ssl_context = generate_adhoc_ssl_context()
-            self.ssl_context = ssl_context
-
-    def wrap_request_ssl(self, request):
-        """
-        Check the first byte of the request for an SSL handshake and optionally
-        wrap the connection. This is a blocking action and should only
-        performed from inside of a new thread/forked process when running a
-        server that can handle simultaneous connections.
-        """
-        if self.ssl_context:
-            # Check the first byte without removing it from the buffer.
-            char = request.recv(1, socket.MSG_PEEK)
-            if char == b"\x16":
-                # It's a SYN byte, assume the client is trying to establish SSL
-                request = self.ssl_context.wrap_socket(request, server_side=True)
-        return request
-
-    def serve_forever(self):
-        """
-        Add some extra log messages when launching the server.
-        """
-        display_hostname = self.host not in ("", "*") and self.host or "localhost"
-        if ":" in display_hostname:
-            display_hostname = "[%s]" % display_hostname
-        quit_msg = "(Press CTRL+C to quit)"
-        self.log(
-            "info",
-            " * Running on %s://%s:%d/ %s",
-            self.ssl_context is None and "http" or "https",
-            display_hostname,
-            self.port,
-            quit_msg,
-        )
-
-        super().serve_forever()
-
-
-class GopherSimpleWSGIServer(GopherBaseWSGIServer):
-    """
-    Add a hook to actually wrap the SSL requests. This is not applicable for
-    the Threaded/Forking servers because they have their own entry points for
-    where the hook needs to be installed. Because of how the exception handling
-    works here, we need to override _handle_request_noblock() to make sure that
-    self.shutdown_request() is always invoked with the correct request object.
-    """
-
-    def _handle_request_noblock(self):
-        try:
-            request, client_address = self.get_request()
-        except OSError:
-            return
-        if self.verify_request(request, client_address):
-            try:
-                request = self.wrap_request_ssl(request)
-                self.process_request(request, client_address)
-            except Exception:
-                self.handle_error(request, client_address)
-                self.shutdown_request(request)
-            except:  # noqa
-                self.shutdown_request(request)
-                raise
-        else:
-            self.shutdown_request(request)
-
-
-class GopherThreadedWSGIServer(ThreadingMixIn, GopherBaseWSGIServer):
-    """
-    Copy of werkzeug.serving.ThreadedWSGIServer using our custom base server.
-
-    The SSL connection is established at the beginning of the child thread.
-    """
-
-    multithread = True
-    daemon_threads = True
-
-    def process_request_thread(self, request, client_address):
-        request = self.wrap_request_ssl(request)
-        super().process_request_thread(request, client_address)
-
-
-class GopherForkingWSGIServer(ForkingMixIn, GopherBaseWSGIServer):
-    """
-    Copy of werkzeug.serving.ForkingWSGIServer using our custom base server.
-
-    The SSL connection is established in the child process immediately after
-    the fork.
-    """
-
-    multiprocess = True
-
-    def __init__(
-        self,
-        host,
-        port,
-        app,
-        processes=40,
-        handler=None,
-        passthrough_errors=False,
-        ssl_context=None,
-        fd=None,
-    ):
-        if not can_fork:
-            raise ValueError("Your platform does not support forking.")
-
-        super().__init__(host, port, app, handler, passthrough_errors, ssl_context, fd)
-        self.max_children = processes
-
-    def process_request(self, request, client_address):
-        """Fork a new subprocess to process the request."""
-        pid = os.fork()
-        if pid:
-            # Parent process
-            if self.active_children is None:
-                self.active_children = set()
-            self.active_children.add(pid)
-            self.close_request(request)
-            return
-        else:
-            # Child process.
-            # This must never return, hence os._exit()!
-            status = 1
-            try:
-                request = self.wrap_request_ssl(request)
-                self.finish_request(request, client_address)
-                status = 0
-            except Exception:
-                self.handle_error(request, client_address)
-            finally:
-                try:
-                    self.shutdown_request(request)
-                finally:
-                    os._exit(status)
-
-
-def make_gopher_ssl_server(
-    host=None,
-    port=None,
-    app=None,
-    threaded=False,
-    processes=1,
-    request_handler=None,
-    passthrough_errors=False,
-    ssl_context=None,
-    fd=None,
-):
-    """
-    Create a new server instance that supports ad-hoc Gopher SSL connections.
-
-    This server is only necessary when enabling experimental SSL over gopher.
-    Otherwise, it's simpler to use app.run() instead. That method accepts the
-    same arguments and has additional support for things like debug mode and
-    auto-reloading.
-    """
-    if threaded and processes > 1:
-        raise ValueError("cannot have a multithreaded and multi process server.")
-    elif threaded:
-        return GopherThreadedWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
-        )
-    elif processes > 1:
-        return GopherForkingWSGIServer(
-            host, port, app, processes, request_handler, passthrough_errors, ssl_context, fd=fd
-        )
-    else:
-        return GopherSimpleWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
-        )
