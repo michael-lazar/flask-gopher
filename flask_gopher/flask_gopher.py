@@ -1,31 +1,28 @@
-import re
+import mimetypes
 import os
-import ssl
-import socket
-import weakref
+import re
 import textwrap
 import traceback
-import mimetypes
-from pathlib import Path
-from datetime import datetime
-from itertools import zip_longest
+import weakref
 from collections import namedtuple
+from datetime import datetime
 from functools import partialmethod
-from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
+from itertools import zip_longest
+from pathlib import Path
+from typing import cast
+from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from pyfiglet import figlet_format, FigletError
-from tabulate import tabulate
-from flask import _request_ctx_stack as request_ctx_stack
-from flask import request, render_template, current_app, url_for
+from flask import _request_ctx_stack as request_ctx_stack  # noqa
+from flask import current_app, render_template, request, url_for
 from flask.helpers import safe_join, send_file
-from flask.sessions import SecureCookieSessionInterface, SecureCookieSession
-from werkzeug.local import LocalProxy
-from werkzeug.serving import WSGIRequestHandler, can_fork
-from werkzeug.serving import BaseWSGIServer, ThreadingMixIn, ForkingMixIn
-from werkzeug.serving import generate_adhoc_ssl_context, load_ssl_context
-from werkzeug.exceptions import HTTPException, BadRequest
+from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
+from itsdangerous import BadSignature, URLSafeSerializer
 from jinja2.filters import escape
-from itsdangerous import URLSafeSerializer, BadSignature
+from pyfiglet import FigletError, figlet_format
+from tabulate import tabulate
+from werkzeug.exceptions import BadRequest, HTTPException
+from werkzeug.local import LocalProxy
+from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
 
 from .__version__ import __version__
 
@@ -35,21 +32,21 @@ def menu():
     """
     Shortcut for gopher.menu
     """
-    return current_app.extensions['gopher'].menu
+    return current_app.extensions["gopher"].menu
 
 
 def render_menu(*lines):
     """
     Shortcut for gopher.render_menu
     """
-    return current_app.extensions['gopher'].render_menu(*lines)
+    return current_app.extensions["gopher"].render_menu(*lines)
 
 
 def render_menu_template(template_name, **context):
     """
     Shortcut for gopher.render_menu_template
     """
-    return current_app.extensions['gopher'].render_menu_template(template_name, **context)
+    return current_app.extensions["gopher"].render_menu_template(template_name, **context)
 
 
 class TextFormatter:
@@ -60,7 +57,7 @@ class TextFormatter:
     def __init__(self, default_width=70):
         self.default_width = default_width
 
-    def banner(self, text, ch='=', side='-', width=None):
+    def banner(self, text, ch="=", side="-", width=None):
         """
         Surrounds the text with an ascii banner:
 
@@ -80,9 +77,9 @@ class TextFormatter:
             # Add the top & bottom
             top = bottom = (ch * width)[:width]
             lines = [top] + lines + [bottom]
-        return '\r\n'.join(lines)
+        return "\r\n".join(lines)
 
-    def wrap(self, text, indent='', width=None):
+    def wrap(self, text, indent="", width=None):
         """
         Wraps a block of text into a paragraph that fits the width of the page
         """
@@ -93,35 +90,36 @@ class TextFormatter:
             subsequent_indent=indent,
             expand_tabs=False,
             replace_whitespace=False,
-            drop_whitespace=True)
+            drop_whitespace=True,
+        )
         lines = text.splitlines()
-        return '\r\n'.join(wrapper.fill(line) for line in lines)
+        return "\r\n".join(wrapper.fill(line) for line in lines)
 
-    def center(self, text, fillchar=' ', width=None):
+    def center(self, text, fillchar=" ", width=None):
         """
         Centers a block of text.
         """
         width = width or self.default_width
         lines = text.splitlines()
-        return '\r\n'.join(line.center(width, fillchar) for line in lines)
+        return "\r\n".join(line.center(width, fillchar) for line in lines)
 
-    def rjust(self, text, fillchar=' ', width=None):
+    def rjust(self, text, fillchar=" ", width=None):
         """
         Right-justifies a block of text.
         """
         width = width or self.default_width
         lines = text.splitlines()
-        return '\r\n'.join(line.rjust(width, fillchar) for line in lines)
+        return "\r\n".join(line.rjust(width, fillchar) for line in lines)
 
-    def ljust(self, text, fillchar=' ', width=None):
+    def ljust(self, text, fillchar=" ", width=None):
         """
         Left-justifies a block of text.
         """
         width = width or self.default_width
         lines = text.splitlines()
-        return '\r\n'.join(line.ljust(width, fillchar) for line in lines)
+        return "\r\n".join(line.ljust(width, fillchar) for line in lines)
 
-    def float_right(self, text_left, text_right, fillchar=' ', width=None):
+    def float_right(self, text_left, text_right, fillchar=" ", width=None):
         """
         Left-justifies text, and then overlays right justified text on top
         of it. This gives the effect of having a floating div on both
@@ -132,13 +130,13 @@ class TextFormatter:
         right_lines = text_right.splitlines()
 
         lines = []
-        for left, right in zip_longest(left_lines, right_lines, fillvalue=''):
+        for left, right in zip_longest(left_lines, right_lines, fillvalue=""):
             padding = width - len(right)
             line = (left.ljust(padding, fillchar) + right)[-width:]
             lines.append(line)
-        return '\r\n'.join(lines)
+        return "\r\n".join(lines)
 
-    def figlet(self, text, width=None, font='normal', justify='auto', **kwargs):
+    def figlet(self, text, width=None, font="normal", justify="auto", **kwargs):
         """
         Renders the given text using the pyfiglet engine. See the pyfiglet
         package for more information on available fonts and options. There's
@@ -159,9 +157,9 @@ class TextFormatter:
             # the bare text that the user supplied.
             pass
 
-        if justify == 'center':
+        if justify == "center":
             text = self.center(text, width=width)
-        elif justify == 'right':
+        elif justify == "right":
             text = self.rjust(text, width=width)
         return text
 
@@ -177,10 +175,10 @@ class TextFormatter:
         # This allows it to be centered / right aligned
         lines = text.splitlines()
         width = max(len(line) for line in lines)
-        return '\r\n'.join([line.ljust(width) for line in lines])
+        return "\r\n".join([line.ljust(width) for line in lines])
 
     @staticmethod
-    def underline(text, ch='_'):
+    def underline(text, ch="_"):
         """
         Adds an underline to a block of text
 
@@ -188,7 +186,7 @@ class TextFormatter:
         """
         width = max(len(line) for line in text.splitlines())
         underline = (ch * width)[:width]
-        return '\r\n'.join([text, underline])
+        return "\r\n".join([text, underline])
 
 
 class GopherMenu:
@@ -237,13 +235,13 @@ class GopherMenu:
         c       BINARY      Calendar file
     """
 
-    TEMPLATE = '{}{:<1}\t{}\t{}\t{}'
+    TEMPLATE = "{}{:<1}\t{}\t{}\t{}"
 
-    def __init__(self, default_host='127.0.0.1', default_port=70):
+    def __init__(self, default_host="127.0.0.1", default_port=70):
         self.default_host = default_host
         self.default_port = default_port
 
-    def entry(self, type_code, text, selector='/', host=None, port=None):
+    def entry(self, type_code, text, selector="/", host=None, port=None):
         host = host if host is not None else self.default_host
         if port is None:
             if host == self.default_host:
@@ -255,7 +253,7 @@ class GopherMenu:
 
         # Strip any newline or tab characters from the components, these would
         # result in a corrupted menu line
-        table = str.maketrans('', '', '\n\r\t')
+        table = str.maketrans("", "", "\n\r\t")
 
         text = str(text).translate(table)
         selector = str(selector).translate(table)
@@ -264,21 +262,21 @@ class GopherMenu:
 
         return self.TEMPLATE.format(type_code, text, selector, host, port)
 
-    text = partialmethod(entry, '0')
-    dir = partialmethod(entry, '1')
-    ccso = partialmethod(entry, '2')
-    binhex = partialmethod(entry, '4')
-    archive = partialmethod(entry, '5')
-    uuencoded = partialmethod(entry, '6')
-    query = partialmethod(entry, '7')
-    telnet = partialmethod(entry, '8')
-    bin = partialmethod(entry, '9')
-    gif = partialmethod(entry, 'g')
-    image = partialmethod(entry, 'I')
-    doc = partialmethod(entry, 'd')
-    sound = partialmethod(entry, 's')
-    video = partialmethod(entry, ';')
-    info = partialmethod(entry, 'i', selector='fake', host='example.com', port=0)
+    text = partialmethod(entry, "0")
+    dir = partialmethod(entry, "1")
+    ccso = partialmethod(entry, "2")
+    binhex = partialmethod(entry, "4")
+    archive = partialmethod(entry, "5")
+    uuencoded = partialmethod(entry, "6")
+    query = partialmethod(entry, "7")
+    telnet = partialmethod(entry, "8")
+    bin = partialmethod(entry, "9")
+    gif = partialmethod(entry, "g")
+    image = partialmethod(entry, "I")
+    doc = partialmethod(entry, "d")
+    sound = partialmethod(entry, "s")
+    video = partialmethod(entry, ";")
+    info = partialmethod(entry, "i", selector="fake", host="example.com", port=0)
 
     # Deprecated aliases
     file = text
@@ -307,7 +305,7 @@ class GopherMenu:
             be ignored by a compliant client, but MUST also be sent by a
             compliant server
         """
-        return self.entry('h', text, 'URL:' + url, None, None)
+        return self.entry("h", text, "URL:" + url, None, None)
 
     def title(self, text):
         """
@@ -328,7 +326,7 @@ class GopherMenu:
           - There is no port to connect to; the placeholder number SHOULD
             therefore be `0` (zero).
         """
-        return self.entry('i', text, 'TITLE', 'example.com', 0)
+        return self.entry("i", text, "TITLE", "example.com", 0)
 
     def error(self, error_code, message):
         """
@@ -347,7 +345,7 @@ class GopherMenu:
 
         # The error spec doesn't seem to work in Lynx, so I'm using plain text
         # return self.entry('3', error_code, message, 'example.com', 0)
-        return 'Error: {} {}'.format(error_code, message)
+        return f"Error: {error_code} {message}"
 
 
 class GopherExtension:
@@ -359,39 +357,40 @@ class GopherExtension:
     URL_REDIRECT_TEMPLATE = """
         <HTML>
         <HEAD>
-        <META HTTP-EQUIV="refresh" content="2;URL={url}"> 
+        <META HTTP-EQUIV="refresh" content="2;URL={url}">
         </HEAD>
         <BODY>
-    
+
         You are following an external link to a Web site. You will be automatically
         taken to the site shortly. If you do not get sent there, please click
-        <A HREF="{url}">here</A> to go to the web site. 
-        <P> 
-        The URL linked is:{url}> 
-        <P> 
-        <A HREF="{url}">{url}</A> 
-        <P> 
-        Thanks for using Gopher! 
-        </BODY> 
+        <A HREF="{url}">here</A> to go to the web site.
+        <P>
+        The URL linked is:{url}>
+        <P>
+        <A HREF="{url}">{url}</A>
+        <P>
+        Thanks for using Gopher!
+        </BODY>
         </HTML>
         """
 
-    def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
-        self.width = None
-        self.show_stack_trace = None
+    DEFAULT_WIDTH = 70
 
-        self.formatter = None
+    def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
+        self.show_stack_trace = None
 
         self.menu_class = menu_class
         self.formatter_class = formatter_class
 
-        self.app = app
         if app is not None:
             self.init_app(app)
+        else:
+            self.width = self.DEFAULT_WIDTH
+            self.formatter = self.formatter_class(self.width)
 
     def init_app(self, app):
-        self.width = app.config.setdefault('GOPHER_WIDTH', 70)
-        self.show_stack_trace = app.config.setdefault('GOPHER_SHOW_STACK_TRACE', False)
+        self.width = app.config.setdefault("GOPHER_WIDTH", self.DEFAULT_WIDTH)
+        self.show_stack_trace = app.config.setdefault("GOPHER_SHOW_STACK_TRACE", False)
 
         self.formatter = self.formatter_class(self.width)
 
@@ -399,7 +398,7 @@ class GopherExtension:
         self._add_gopher_url_redirect(app)
         self._add_gopher_error_handler(app)
 
-        app.extensions['gopher'] = weakref.proxy(self)
+        app.extensions["gopher"] = weakref.proxy(self)
         app.session_interface = GopherSessionInterface()
 
     def _add_gopher_jinja_methods(self, app):
@@ -411,20 +410,16 @@ class GopherExtension:
 
         @app.context_processor
         def add_context():
-            return {
-                'gopher': self,
-                'menu': menu,
-                'tabulate': self.formatter.tabulate
-            }
+            return {"gopher": self, "menu": menu, "tabulate": self.formatter.tabulate}
 
-        app.add_template_filter(self.formatter.wrap, 'wrap')
-        app.add_template_filter(self.formatter.rjust, 'rjust')
-        app.add_template_filter(self.formatter.ljust, 'ljust')
-        app.add_template_filter(self.formatter.center, 'center')
-        app.add_template_filter(self.formatter.banner, 'banner')
-        app.add_template_filter(self.formatter.figlet, 'figlet')
-        app.add_template_filter(self.formatter.underline, 'underline')
-        app.add_template_filter(self.formatter.float_right, 'float_right')
+        app.add_template_filter(self.formatter.wrap, "wrap")
+        app.add_template_filter(self.formatter.rjust, "rjust")
+        app.add_template_filter(self.formatter.ljust, "ljust")
+        app.add_template_filter(self.formatter.center, "center")
+        app.add_template_filter(self.formatter.banner, "banner")
+        app.add_template_filter(self.formatter.figlet, "figlet")
+        app.add_template_filter(self.formatter.underline, "underline")
+        app.add_template_filter(self.formatter.float_right, "float_right")
 
     def _add_gopher_url_redirect(self, app):
         """
@@ -435,11 +430,12 @@ class GopherExtension:
         From what I understand, this should be a bare text response
         (i.e. no HTTP status line).
         """
-        @app.route('/URL:<path:url>')
+
+        @app.route("/URL:<path:url>")
         def gopher_url_redirect(url):
             # Use the full_path because it keeps any query params intact
-            url = request.full_path.split(':', 1)[1]  # Drop the "/URL:"
-            url = url.rstrip('?')  # Flask adds an ? even if there are no params
+            url = request.full_path.split(":", 1)[1]  # Drop the "/URL:"
+            url = url.rstrip("?")  # Flask adds an ? even if there are no params
             url = escape(url)
             return self.URL_REDIRECT_TEMPLATE.format(url=url).strip()
 
@@ -448,26 +444,27 @@ class GopherExtension:
         Intercept all errors for GOPHER requests and replace the default
         HTML error document with a gopher compatible text document.
         """
+
         def handle_error(error):
-            if request.scheme != 'gopher':
+            if request.scheme != "gopher":
                 # Pass through the error to the default handler
                 return error
 
-            code = getattr(error, 'code', 500)
-            name = getattr(error, 'name', 'Internal Server Error')
-            desc = getattr(error, 'description', None)
+            code = getattr(error, "code", 500)
+            name = getattr(error, "name", "Internal Server Error")
+            desc = getattr(error, "description", None)
             if desc is None and self.show_stack_trace:
                 desc = traceback.format_exc()
             elif desc is None:
-                desc = 'An internal error has occurred'
-            body = [menu.error(code, name), '', self.formatter.wrap(desc)]
+                desc = "An internal error has occurred"
+            body = [menu.error(code, name), "", self.formatter.wrap(desc)]
 
             # There's no way to know if the client has requested a gopher
             # menu, a text file, or a binary file. But we can make a guess
             # based on if the request path has a file extension at the end.
             ext = os.path.splitext(request.path)[1]
             if ext:
-                return '\r\n'.join(body)
+                return "\r\n".join(body)
             else:
                 return self.render_menu(*body)
 
@@ -486,9 +483,9 @@ class GopherExtension:
         """
         ctx = request_ctx_stack.top
         if ctx is not None:
-            if not hasattr(ctx, 'gopher_menu'):
-                host = request.environ['SERVER_NAME']
-                port = request.environ['SERVER_PORT']
+            if not hasattr(ctx, "gopher_menu"):
+                host = request.environ["SERVER_NAME"]
+                port = request.environ["SERVER_PORT"]
                 ctx.gopher_menu = self.menu_class(host, port)
             return ctx.gopher_menu
 
@@ -528,8 +525,8 @@ class GopherExtension:
             https://tools.ietf.org/html/draft-matavka-gopher-ii-03
             https://tools.ietf.org/html/rfc1436
         """
-        menu_line_pattern = re.compile('^.+\t.*\t.*\t.*$')
-        raw_menu, menu_lines = '\n'.join(lines), []
+        menu_line_pattern = re.compile("^.+\t.*\t.*\t.*$")
+        raw_menu, menu_lines = "\n".join(lines), []
         for line in raw_menu.splitlines():
             line = line.rstrip()
             if not menu_line_pattern.match(line):
@@ -539,16 +536,16 @@ class GopherExtension:
             # Unfortunately we need to re-parse every line to make sure that
             # display string is under the configured width. Add +1 to
             # account for the one character type identifier.
-            parts = line.split('\t')
-            parts[0] = parts[0][:self.width + 1]
-            line = '\t'.join(parts)
+            parts = line.split("\t")
+            parts[0] = parts[0][: self.width + 1]
+            line = "\t".join(parts)
             menu_lines.append(line)
 
-        if not menu_lines or menu_lines[-1] != '.':
-            menu_lines.append('.')
-        menu_lines.append('')
+        if not menu_lines or menu_lines[-1] != ".":
+            menu_lines.append(".")
+        menu_lines.append("")
 
-        return '\r\n'.join(menu_lines)
+        return "\r\n".join(menu_lines)
 
     def render_menu_template(self, template_name, **context):
         """
@@ -558,8 +555,14 @@ class GopherExtension:
         template_string = render_template(template_name, **context)
         return self.render_menu(template_string)
 
-    def serve_directory(self, local_directory, view_name, url_token='filename',
-                        show_timestamp=True, width=None):
+    def serve_directory(
+        self,
+        local_directory,
+        view_name,
+        url_token="filename",
+        show_timestamp=True,
+        width=None,
+    ):
         """
         This is a convenience wrapper around the GopherDirectory class.
         """
@@ -568,7 +571,8 @@ class GopherExtension:
             view_name,
             url_token=url_token,
             show_timestamp=show_timestamp,
-            width=width or self.width)
+            width=width or self.width,
+        )
 
     @staticmethod
     def url_for(endpoint, _external=False, _type=1, **values):
@@ -580,11 +584,11 @@ class GopherExtension:
         if not _external:
             return url_for(endpoint, **values)
 
-        values['_scheme'] = 'gopher'
+        values["_scheme"] = "gopher"
         url = url_for(endpoint, _external=_external, **values)
-        parts = url.split('/')
+        parts = url.split("/")
         parts.insert(3, str(_type))
-        url = '/'.join(parts)
+        url = "/".join(parts)
         return url
 
 
@@ -634,33 +638,35 @@ class GopherRequestHandler(WSGIRequestHandler):
         https://tools.ietf.org/html/rfc1436
     """
 
+    search_text: str
+
     @property
     def server_version(self):
-        return 'Flask-Gopher/' + __version__
+        return "Flask-Gopher/" + __version__
 
     def send_header(self, keyword, value):
-        if self.request_version != 'gopher':
+        if self.request_version != "gopher":
             return super().send_header(keyword, value)
 
     def end_headers(self):
-        if self.request_version != 'gopher':
+        if self.request_version != "gopher":
             return super().end_headers()
 
     def send_response(self, code, message=None):
         self.log_request(code)
-        if self.request_version != 'gopher':
+        if self.request_version != "gopher":
             if message is None:
-                message = code in self.responses and self.responses[code][0] or ''
-            if self.request_version != 'HTTP/0.9':
+                message = code in self.responses and self.responses[code][0] or ""
+            if self.request_version != "HTTP/0.9":
                 hdr = "%s %d %s\r\n" % (self.protocol_version, code, message)
-                self.wfile.write(hdr.encode('ascii'))
+                self.wfile.write(hdr.encode("ascii"))
 
     def make_environ(self):
         environ = super().make_environ()
-        if self.request_version == 'gopher':
-            environ['wsgi.url_scheme'] = 'gopher'
-            environ['SEARCH_TEXT'] = self.search_text
-            environ['SECURE'] = isinstance(self.request, ssl.SSLSocket)
+        if self.request_version == "gopher":
+            environ["wsgi.url_scheme"] = "gopher"
+            environ["SEARCH_TEXT"] = self.search_text
+            environ["SECURE"] = False
 
             # Flask has a sanity check where if app.config['SERVER_NAME'] is
             # defined, it has to match either the HTTP host header or the
@@ -672,26 +678,27 @@ class GopherRequestHandler(WSGIRequestHandler):
             # header or the SERVER_NAME env variable to match it.
             # Go look at werkzeug.routing.Map.bind_to_environ()
             try:
-                server_name = self.server.app.config.get('SERVER_NAME')
+                server = cast(BaseWSGIServer, self.server)
+                server_name = server.app.config.get("SERVER_NAME")
             except Exception:
                 pass
             else:
                 if server_name:
-                    if ':' in server_name:
-                        environ['SERVER_PORT'] = server_name.split(':')[1]
-                    environ['SERVER_NAME'] = server_name.split(':')[0]
+                    if ":" in server_name:
+                        environ["SERVER_PORT"] = server_name.split(":")[1]
+                    environ["SERVER_NAME"] = server_name.split(":")[0]
         return environ
 
     def parse_request(self):
-        requestline = str(self.raw_requestline, 'iso-8859-1')
-        self.requestline = requestline.rstrip('\r\n')
+        requestline = str(self.raw_requestline, "iso-8859-1")
+        self.requestline = requestline.rstrip("\r\n")
 
         # Determine the the request is HTTP, and if so let the
         # python HTTPRequestHandler handle it
         words = self.requestline.split()
-        if len(words) == 3 and words[2][:5] == 'HTTP/':
+        if len(words) == 3 and words[2][:5] == "HTTP/":
             return super().parse_request()
-        elif len(words) == 2 and words[0] == 'GET':
+        elif len(words) == 2 and words[0] == "GET":
             return super().parse_request()
 
         # At this point, assume the request is a gopher://
@@ -699,21 +706,17 @@ class GopherRequestHandler(WSGIRequestHandler):
 
     def parse_gopher_request(self):
         self.close_connection = True
-        self.request_version = 'gopher'  # Instead of HTTP/1.1, etc
-        self.command = 'GET'
-        self.headers = {}
+        self.request_version = "gopher"  # Instead of HTTP/1.1, etc
+        self.command = "GET"
+        self.headers = self.MessageClass()
 
-        url_parts = self.requestline.split('\t')
-        self.path = url_parts[0] or '/'
-        if not self.path.startswith('/'):
+        url_parts = self.requestline.split("\t")
+        self.path = url_parts[0] or "/"
+        if not self.path.startswith("/"):
             # Gopher doesn't require the selector to start with a /, but
             # the werkzeug router does!
-            self.path = '/' + self.path
-        self.search_text = url_parts[1] if len(url_parts) > 1 else ''
-
-        # Add a token to the requestline for server logging
-        if isinstance(self.request, ssl.SSLSocket):
-            self.requestline = '<SSL> ' + self.requestline
+            self.path = "/" + self.path
+        self.search_text = url_parts[1] if len(url_parts) > 1 else ""
 
         return True
 
@@ -737,15 +740,18 @@ class GopherDirectory:
             else
                 return file
     """
-    result_class = namedtuple('file', ['is_directory', 'data'])
-    timestamp_fmt = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self,
-                 local_directory,
-                 view_name,
-                 url_token='filename',
-                 show_timestamp=False,
-                 width=70):
+    result_class = namedtuple("result_class", ["is_directory", "data"])
+    timestamp_fmt = "%Y-%m-%d %H:%M:%S"
+
+    def __init__(
+        self,
+        local_directory,
+        view_name,
+        url_token="filename",
+        show_timestamp=False,
+        width=70,
+    ):
         """
         Args:
             local_directory: The local file system path that will be served.
@@ -799,7 +805,7 @@ class GopherDirectory:
                 options = {self.url_token: folder.parent}
             else:
                 options = {}
-            lines.append(menu.dir('..', url_for(self.view_name, **options)))
+            lines.append(menu.dir("..", url_for(self.view_name, **options)))
 
         for file in sorted(Path(abs_folder).iterdir()):
             relative_file = folder / file.name
@@ -808,7 +814,7 @@ class GopherDirectory:
 
             item_text = file.name
             if file.is_dir():
-                item_text += '/'
+                item_text += "/"
 
             if self.show_timestamp:
                 last_modified = datetime.fromtimestamp(file.stat().st_mtime)
@@ -818,7 +824,7 @@ class GopherDirectory:
             options = {self.url_token: relative_file}
             lines.append(menu_type(item_text, url_for(self.view_name, **options)))
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _guess_menu_type(self, file):
         """
@@ -835,13 +841,13 @@ class GopherDirectory:
             return menu.text
 
         menu_type_map = [
-            ('text/', menu.text),
-            ('image/gif', menu.gif),
-            ('image/', menu.image),
-            ('application/pdf', menu.doc),
-            ('application/', menu.bin),
-            ('audio/', menu.sound),
-            ('video/', menu.video),
+            ("text/", menu.text),
+            ("image/gif", menu.gif),
+            ("image/", menu.image),
+            ("application/pdf", menu.doc),
+            ("application/", menu.bin),
+            ("audio/", menu.sound),
+            ("video/", menu.video),
         ]
         for mime_type_prefix, mime_menu_type in menu_type_map:
             if mime_type.startswith(mime_type_prefix):
@@ -866,7 +872,7 @@ class GopherSessionInterface(SecureCookieSessionInterface):
     avoid returning large and unwieldy URL's.
     """
 
-    gopher_session_class = type('GopherSession', (SecureCookieSession,), {})
+    gopher_session_class = type("GopherSession", (SecureCookieSession,), {})
 
     def get_gopher_signing_serializer(self, app):
         """
@@ -875,14 +881,16 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         """
         if not app.secret_key:
             return None
-        signer_kwargs = dict(
-            key_derivation=self.key_derivation,
-            digest_method=self.digest_method)
+
         return URLSafeSerializer(
             app.secret_key,
             salt=self.salt,
             serializer=self.serializer,
-            signer_kwargs=signer_kwargs)
+            signer_kwargs={
+                "key_derivation": self.key_derivation,
+                "digest_method": self.digest_method,
+            },
+        )
 
     def open_session(self, app, request):
         """
@@ -891,7 +899,7 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         s = self.get_gopher_signing_serializer(app)
         if not s:
             return None
-        val = request.args.get('_session', None)
+        val = request.args.get("_session", None)
         if not val:
             return self.gopher_session_class()
         try:
@@ -919,9 +927,9 @@ class GopherSessionInterface(SecureCookieSessionInterface):
         session_str = s.dumps(dict(session))
 
         # Build the regex pattern that searches for internal gopher menu links
-        host = request.environ['SERVER_NAME']
-        port = request.environ['SERVER_PORT']
-        url_pattern = '^(?P<type>[^i])(?P<desc>.+)\t(?P<selector>.*)\t%s\t%s\r$'
+        host = request.environ["SERVER_NAME"]
+        port = request.environ["SERVER_PORT"]
+        url_pattern = "^(?P<type>[^i])(?P<desc>.+)\t(?P<selector>.*)\t%s\t%s\r$"
         url_pattern = url_pattern % (re.escape(host), re.escape(port))
 
         def on_match(matchobj):
@@ -930,184 +938,22 @@ class GopherSessionInterface(SecureCookieSessionInterface):
             existing gopher link, extracts the path and the query string,
             adds the _session param to it, and rebuilds the link.
             """
-            url_parts = urlsplit(matchobj.group('selector'))
+            url_parts = urlsplit(matchobj.group("selector"))
             query = parse_qs(url_parts.query)
-            query['_session'] = [session_str]
+            query["_session"] = [session_str]  # noqa
             new_query = urlencode(query, doseq=True)
-            new_url = urlunsplit([
-                url_parts.scheme, url_parts.netloc, url_parts.path,
-                new_query, url_parts.fragment])
-            new_line = '%s%s\t%s\t%s\t%s\r' % (
-                matchobj.group('type'), matchobj.group('desc'), new_url, host, port)
+            new_url = urlunsplit(
+                [url_parts.scheme, url_parts.netloc, url_parts.path, new_query, url_parts.fragment]
+            )
+            new_line = "{}{}\t{}\t{}\t{}\r".format(
+                matchobj.group("type"),
+                matchobj.group("desc"),
+                new_url,
+                host,
+                port,
+            )
             return new_line
 
         data = bytes.decode(response.data)
         new_data = re.sub(url_pattern, on_match, data, flags=re.M)
         response.data = new_data.encode()
-
-
-class GopherBaseWSGIServer(BaseWSGIServer):
-    """
-    WSGI server extension that enables SSL sockets on a per-connection basis.
-
-    This is achieved by peeking at the first byte of each socket connection.
-    If the first byte is a SYN, it indicates the start of an SSL handshake.
-    """
-
-    def __init__(self, host, port, app, handler=None,
-                 passthrough_errors=False, ssl_context=None, fd=None):
-        """
-        Override the server initialization to save the SSL context without
-        immediately wrapping the socket in an SSL connection.
-        """
-        super(GopherBaseWSGIServer, self).__init__(
-            host, port, app, handler, passthrough_errors, fd=fd)
-
-        if ssl_context is not None:
-            if isinstance(ssl_context, tuple):
-                ssl_context = load_ssl_context(*ssl_context)
-            if ssl_context == 'adhoc':
-                ssl_context = generate_adhoc_ssl_context()
-            self.ssl_context = ssl_context
-
-    def wrap_request_ssl(self, request):
-        """
-        Check the first byte of the request for an SSL handshake and optionally
-        wrap the connection. This is a blocking action and should only
-        performed from inside of a new thread/forked process when running a
-        server that can handle simultaneous connections.
-        """
-        if self.ssl_context:
-            # Check the first byte without removing it from the buffer.
-            char = request.recv(1, socket.MSG_PEEK)
-            if char == b'\x16':
-                # It's a SYN byte, assume the client is trying to establish SSL
-                request = self.ssl_context.wrap_socket(request, server_side=True)
-        return request
-
-    def serve_forever(self):
-        """
-        Add some extra log messages when launching the server.
-        """
-        display_hostname = self.host not in ('', '*') and self.host or 'localhost'
-        if ':' in display_hostname:
-            display_hostname = '[%s]' % display_hostname
-        quit_msg = '(Press CTRL+C to quit)'
-        self.log('info', ' * Running on %s://%s:%d/ %s',
-                 self.ssl_context is None and 'http' or 'https',
-                 display_hostname, self.port, quit_msg)
-
-        super(GopherBaseWSGIServer, self).serve_forever()
-
-
-class GopherSimpleWSGIServer(GopherBaseWSGIServer):
-    """
-    Add a hook to actually wrap the SSL requests. This is not applicable for
-    the Threaded/Forking servers because they have their own entry points for
-    where the hook needs to be installed. Because of how the exception handling
-    works here, we need to override _handle_request_noblock() to make sure that
-    self.shutdown_request() is always invoked with the correct request object.
-    """
-
-    def _handle_request_noblock(self):
-        try:
-            request, client_address = self.get_request()
-        except OSError:
-            return
-        if self.verify_request(request, client_address):
-            try:
-                request = self.wrap_request_ssl(request)
-                self.process_request(request, client_address)
-            except Exception:
-                self.handle_error(request, client_address)
-                self.shutdown_request(request)
-            except:
-                self.shutdown_request(request)
-                raise
-        else:
-            self.shutdown_request(request)
-
-
-class GopherThreadedWSGIServer(ThreadingMixIn, GopherBaseWSGIServer):
-    """
-    Copy of werkzeug.serving.ThreadedWSGIServer using our custom base server.
-
-    The SSL connection is established at the beginning of the child thread.
-    """
-    multithread = True
-    daemon_threads = True
-
-    def process_request_thread(self, request, client_address):
-        request = self.wrap_request_ssl(request)
-        super(GopherThreadedWSGIServer, self).process_request_thread(request, client_address)
-
-
-class GopherForkingWSGIServer(ForkingMixIn, GopherBaseWSGIServer):
-    """
-    Copy of werkzeug.serving.ForkingWSGIServer using our custom base server.
-
-    The SSL connection is established in the child process immediately after
-    the fork.
-    """
-    multiprocess = True
-
-    def __init__(self, host, port, app, processes=40, handler=None,
-                 passthrough_errors=False, ssl_context=None, fd=None):
-        if not can_fork:
-            raise ValueError('Your platform does not support forking.')
-
-        super(GopherForkingWSGIServer, self).__init__(
-            host, port, app, handler, passthrough_errors, ssl_context, fd)
-        self.max_children = processes
-
-    def process_request(self, request, client_address):
-        """Fork a new subprocess to process the request."""
-        pid = os.fork()
-        if pid:
-            # Parent process
-            if self.active_children is None:
-                self.active_children = set()
-            self.active_children.add(pid)
-            self.close_request(request)
-            return
-        else:
-            # Child process.
-            # This must never return, hence os._exit()!
-            status = 1
-            try:
-                request = self.wrap_request_ssl(request)
-                self.finish_request(request, client_address)
-                status = 0
-            except Exception:
-                self.handle_error(request, client_address)
-            finally:
-                try:
-                    self.shutdown_request(request)
-                finally:
-                    os._exit(status)
-
-
-def make_gopher_ssl_server(
-        host=None, port=None, app=None, threaded=False, processes=1,
-        request_handler=None, passthrough_errors=False, ssl_context=None,
-        fd=None):
-    """
-    Create a new server instance that supports ad-hoc Gopher SSL connections.
-
-    This server is only necessary when enabling experimental SSL over gopher.
-    Otherwise, it's simpler to use app.run() instead. That method accepts the
-    same arguments and has additional support for things like debug mode and
-    auto-reloading.
-    """
-    if threaded and processes > 1:
-        raise ValueError("cannot have a multithreaded and multi process server.")
-    elif threaded:
-        return GopherThreadedWSGIServer(host, port, app, request_handler,
-                                        passthrough_errors, ssl_context, fd=fd)
-    elif processes > 1:
-        return GopherForkingWSGIServer(host, port, app, processes,
-                                       request_handler, passthrough_errors,
-                                       ssl_context, fd=fd)
-    else:
-        return GopherSimpleWSGIServer(host, port, app, request_handler,
-                                      passthrough_errors, ssl_context, fd=fd)

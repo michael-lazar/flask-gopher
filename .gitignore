@@ -1,6 +1,7 @@
 .*
-!.travis.yml
+!.github
 !.gitignore
+!.pre-commit-config.yaml
 *~
 *.pyc
 *.log

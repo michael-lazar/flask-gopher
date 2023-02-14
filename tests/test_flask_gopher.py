@@ -1,23 +1,29 @@
-import os
-import ssl
 import json
-import socket
 import logging
+import os
+import socket
 import unittest
 from threading import Thread
 from urllib.request import Request, urlopen
 
-from flask import Flask, request, url_for, session
-from flask_gopher import GopherExtension, GopherRequestHandler
-from flask_gopher import GopherMenu, TextFormatter
-from flask_gopher import make_gopher_ssl_server
-from flask_gopher import menu, render_menu, render_menu_template
+from flask import Flask, request, session, url_for
+from werkzeug.serving import make_server
 
+from flask_gopher import (
+    GopherExtension,
+    GopherMenu,
+    GopherRequestHandler,
+    TextFormatter,
+    menu,
+    render_menu,
+    render_menu_template,
+)
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
+
 # Disable WSGI server logs spamming the unit test output
-logging.getLogger('werkzeug').setLevel(60)
+logging.getLogger("werkzeug").setLevel(60)
 
 
 class TestFunctional(unittest.TestCase):
@@ -27,8 +33,11 @@ class TestFunctional(unittest.TestCase):
     strings to the server and check the validity of the response body from
     end-to-end.
     """
-    app = gopher = server = thread = None
 
+    app = None
+    gopher = None
+    server = None
+    thread = None
     threaded = False
     processes = 1
 
@@ -37,86 +46,93 @@ class TestFunctional(unittest.TestCase):
         """
         Spin up a fully-functional test gopher application in a new thread.
         """
-        cls.app = app = Flask(__name__, template_folder=TEST_DIR)
+        cls.app = app = Flask(__name__, template_folder=os.path.join(TEST_DIR, "templates"))
         cls.app.logger.setLevel(60)  # Disable Flask exception logging
 
         cls.gopher = gopher = GopherExtension(app)
 
-        app.config['SECRET_KEY'] = 's3cr3tk3y'
-        app.config['SERVER_NAME'] = 'gopher.server.com:7000'
+        app.config["SECRET_KEY"] = "s3cr3tk3y"
+        app.config["SERVER_NAME"] = "gopher.server.com:7000"
 
-        @app.route('/')
+        @app.route("/")
         def home():
-            return 'Hello World!'
+            return "Hello World!"
 
-        @app.route('/menu')
+        @app.route("/menu")
         def menu_route():
             return render_menu(
-                menu.submenu('Submenu', url_for('menu_route')),
-                menu.file('Text', url_for('static', filename='file.txt')),
-                menu.info('x' * 200),  # Long lines should be truncated
-                'x' * 200,  # Should looks the same as using menu.info()
-                menu.info('foo\r\nbar\t'))  # Tabs and newlines should be stripped
+                menu.submenu("Submenu", url_for("menu_route")),
+                menu.file("Text", url_for("static", filename="file.txt")),
+                menu.info("x" * 200),  # Long lines should be truncated
+                "x" * 200,  # Should looks the same as using menu.info()
+                menu.info("foo\r\nbar\t"),
+            )  # Tabs and newlines should be stripped
 
-        @app.route('/template')
+        @app.route("/template")
         def template():
-            return render_menu_template('test_template.gopher', items=range(3))
+            return render_menu_template("test_template.gopher", items=range(3))
 
-        @app.route('/ssl')
-        def ssl():
-            return str(request.environ['SECURE'])
-
-        @app.route('/echo/<string>')
+        @app.route("/echo/<string>")
         def echo(string):
             return string
 
-        @app.route('/page/<int:page>')
+        @app.route("/page/<int:page>")
         def page(page):
-            return 'page: ' + str(page)
+            return "page: " + str(page)
 
-        @app.route('/internal_url')
+        @app.route("/internal_url")
         def internal_url():
-            return url_for('page', page=2)
+            return url_for("page", page=2)
 
-        @app.route('/external_menu_url')
+        @app.route("/external_menu_url")
         def external_menu_url():
-            return gopher.url_for('page', page=2, _external=True)
+            return gopher.url_for("page", page=2, _external=True)
 
-        @app.route('/query')
+        @app.route("/query")
         def query():
-            return 'query: ' + json.dumps(dict(request.args.items()))
+            return "query: " + json.dumps(dict(request.args.items()))
 
-        @app.route('/search')
+        @app.route("/search")
         def search():
-            return 'search: ' + request.environ['SEARCH_TEXT']
+            return "search: " + request.environ["SEARCH_TEXT"]
 
-        @app.route('/internal_error')
+        @app.route("/internal_error")
         def internal_error():
             return 1 // 0
 
-        test_directory = gopher.serve_directory(TEST_DIR, 'directory', show_timestamp=False)
+        test_directory = gopher.serve_directory(
+            os.path.join(TEST_DIR, "files"),
+            "directory",
+            show_timestamp=False,
+        )
 
-        @app.route('/directory')
-        @app.route('/directory/<path:filename>')
-        def directory(filename=''):
+        @app.route("/directory")
+        @app.route("/directory/<path:filename>")
+        def directory(filename=""):
             is_directory, data = test_directory.load_file(filename)
             if is_directory:
                 return gopher.render_menu(data)
             else:
                 return data
 
-        @app.route('/session')
+        @app.route("/session")
         def session_route():
             resp = render_menu(
-                'name: ' + session.get('name', ''),
-                menu.submenu('Home', url_for('menu_route')),
-                menu.submenu('External', host='debian.org'))
-            session['name'] = 'fran'
+                "name: " + session.get("name", ""),
+                menu.submenu("Home", url_for("menu_route")),
+                menu.submenu("External", host="debian.org"),
+            )
+            session["name"] = "fran"
             return resp
 
-        cls.server = make_gopher_ssl_server(
-            '127.0.0.1', 0, app, threaded=cls.threaded, processes=cls.processes,
-            request_handler=GopherRequestHandler, ssl_context='adhoc')
+        cls.server = make_server(
+            host="127.0.0.1",
+            port=0,
+            app=app,
+            threaded=cls.threaded,
+            processes=cls.processes,
+            request_handler=GopherRequestHandler,
+        )
         cls.thread = Thread(target=cls.server.serve_forever)
         cls.thread.start()
 
@@ -129,13 +145,11 @@ class TestFunctional(unittest.TestCase):
         cls.thread.join(timeout=5)
 
     @classmethod
-    def send_data(cls, data, use_ssl=False):
+    def send_data(cls, data):
         """
         Send byte data to the server using a TCP/IP socket.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if use_ssl:
-                s = ssl.wrap_socket(s)
             s.connect((cls.server.host, cls.server.port))
             s.sendall(data)
 
@@ -147,102 +161,100 @@ class TestFunctional(unittest.TestCase):
                     break
                 chunks.append(data)
 
-            if use_ssl:
-                s.close()
-            return b''.join(chunks)
+            return b"".join(chunks)
 
     def test_empty_request(self):
         """
         Empty request strings should return the root url.
         """
-        resp = self.send_data(b'\n')
-        self.assertEqual(resp, b'Hello World!')
-        resp = self.send_data(b'\r\n')
-        self.assertEqual(resp, b'Hello World!')
+        resp = self.send_data(b"\n")
+        self.assertEqual(resp, b"Hello World!")
+        resp = self.send_data(b"\r\n")
+        self.assertEqual(resp, b"Hello World!")
 
     def test_root_url(self):
-        resp = self.send_data(b'/\r\n')
-        self.assertEqual(resp, b'Hello World!')
+        resp = self.send_data(b"/\r\n")
+        self.assertEqual(resp, b"Hello World!")
 
     def test_multiline_request(self):
         """
         Anything past the first line of the request should be ignored.
         """
-        resp = self.send_data(b'/\r\ntwo line request\r\nthird line')
-        self.assertEqual(resp, b'Hello World!')
+        resp = self.send_data(b"/\r\ntwo line request\r\nthird line")
+        self.assertEqual(resp, b"Hello World!")
 
     def test_gopher_plus(self):
         """
         Gopher+ connections should ignore anything after the second tab.
         """
-        resp = self.send_data(b'/\t\tgopher plus data\r\n')
-        self.assertEqual(resp, b'Hello World!')
+        resp = self.send_data(b"/\t\tgopher plus data\r\n")
+        self.assertEqual(resp, b"Hello World!")
 
     def test_query_string(self):
         """
         Query strings should accepted by the server and parsed.
         """
-        resp = self.send_data(b'/query\r\n')
-        self.assertEqual(resp, b'query: {}')
-        resp = self.send_data(b'/query?city=Grand%20Rapids\r\n')
+        resp = self.send_data(b"/query\r\n")
+        self.assertEqual(resp, b"query: {}")
+        resp = self.send_data(b"/query?city=Grand%20Rapids\r\n")
         self.assertEqual(resp, b'query: {"city": "Grand Rapids"}')
 
     def test_search(self):
         """
         A tab in the request line should indicate search query text.
         """
-        resp = self.send_data(b'/search\r\n')
-        self.assertEqual(resp, b'search: ')
-        resp = self.send_data(b'/search\tMy Search String\r\n')
-        self.assertEqual(resp, b'search: My Search String')
+        resp = self.send_data(b"/search\r\n")
+        self.assertEqual(resp, b"search: ")
+        resp = self.send_data(b"/search\tMy Search String\r\n")
+        self.assertEqual(resp, b"search: My Search String")
 
     def test_not_found(self):
         """
         Check that the default 404 routing returns a gopher menu response.
         """
-        resp = self.send_data(b'/invalid_url\r\n')
-        self.assertTrue(resp.startswith(b'iError: 404 Not Found\tfake\texample.com\t0\r\n'))
-        self.assertIn(b'The requested URL was not found', resp)
-        self.assertTrue(resp.endswith(b'\r\n.\r\n'))
+        resp = self.send_data(b"/invalid_url\r\n")
+        self.assertTrue(resp.startswith(b"iError: 404 Not Found\tfake\texample.com\t0\r\n"))
+        self.assertIn(b"The requested URL was not found", resp)
+        self.assertTrue(resp.endswith(b"\r\n.\r\n"))
 
     def test_internal_error_menu(self):
         """
         Check that internal errors return a gopher menu response.
         """
-        resp = self.send_data(b'/internal_error\r\n')
-        line = b'iError: 500 Internal Server Error\tfake\texample.com\t0\r\n'
+        resp = self.send_data(b"/internal_error\r\n")
+        line = b"iError: 500 Internal Server Error\tfake\texample.com\t0\r\n"
         self.assertTrue(resp.startswith(line))
-        self.assertTrue(resp.endswith(b'\r\n.\r\n'))
+        self.assertTrue(resp.endswith(b"\r\n.\r\n"))
 
     def test_internal_error_file(self):
         """
         Check that errors for non-menu endpoints return plain text messages.
         """
-        resp = self.send_data(b'/internal_error.txt\r\n')
-        self.assertTrue(resp.startswith(b'Error: 404 Not Found\r\n'))
-        self.assertFalse(resp.endswith(b'\r\n.\r\n'))
+        resp = self.send_data(b"/internal_error.txt\r\n")
+        self.assertTrue(resp.startswith(b"Error: 404 Not Found\r\n"))
+        self.assertFalse(resp.endswith(b"\r\n.\r\n"))
 
     def test_internal_url(self):
         """
         Internal links should work with the default flask url_for method.
         """
-        resp = self.send_data(b'/internal_url\r\n')
-        self.assertEqual(resp, b'/page/2')
+        resp = self.send_data(b"/internal_url\r\n")
+        self.assertEqual(resp, b"/page/2")
 
     def test_external_menu_url(self):
         """
         External Gopher menu links should have a "/1/" at the root.
         """
-        resp = self.send_data(b'/external_menu_url\r\n')
-        self.assertEqual(resp,  b'gopher://gopher.server.com:7000/1/page/2')
+        resp = self.send_data(b"/external_menu_url\r\n")
+        self.assertEqual(resp, b"gopher://gopher.server.com:7000/1/page/2")
 
     def test_url_redirect(self):
         """
         Selectors starting with URL:<path> should be sent an HTML document.
         """
-        resp = self.send_data(b'/URL:https://gopher.floodgap.com\r\n')
-        self.assertTrue(resp.startswith(b'<HTML>'))
-        self.assertTrue(resp.endswith(b'</HTML>'))
+        resp = self.send_data(b"/URL:https://gopher.floodgap.com\r\n")
+        self.assertTrue(resp.startswith(b"<HTML>"))
+        self.assertTrue(resp.endswith(b"</HTML>"))
 
         href = b'<A HREF="https://gopher.floodgap.com">https://gopher.floodgap.com</A>'
         self.assertIn(href, resp)
@@ -252,11 +264,11 @@ class TestFunctional(unittest.TestCase):
         Selectors starting with URL:<path> should preserve the URL query params.
         """
         url = 'https://gopher.floodgap.com?foo=b"r&foz=baz'
-        escaped_url = 'https://gopher.floodgap.com?foo=b&#34;r&amp;foz=baz'
+        escaped_url = "https://gopher.floodgap.com?foo=b&#34;r&amp;foz=baz"
 
-        resp = self.send_data('/URL:{}\r\n'.format(url).encode())
-        self.assertTrue(resp.startswith(b'<HTML>'))
-        self.assertTrue(resp.endswith(b'</HTML>'))
+        resp = self.send_data(f"/URL:{url}\r\n".encode())
+        self.assertTrue(resp.startswith(b"<HTML>"))
+        self.assertTrue(resp.endswith(b"</HTML>"))
 
         self.assertIn('<A HREF="{0}">{0}</A>'.format(escaped_url).encode(), resp)
 
@@ -264,45 +276,53 @@ class TestFunctional(unittest.TestCase):
         """
         Regular HTTP requests should still work and headers should be passed
         """
-        url = 'http://%s:%s/' % (self.server.host, self.server.port)
-        request = Request(url)
-        request.add_header('HOST', 'gopher.server.com:7000')
-        resp = urlopen(request)
+        url = f"http://{self.server.host}:{self.server.port}/"
+        req = Request(url)
+        req.add_header("HOST", "gopher.server.com:7000")
+        resp = urlopen(req)
         self.assertEqual(resp.status, 200)
-        self.assertIn('Content-Type', resp.headers)
-        self.assertIn('Content-Length', resp.headers)
-        self.assertTrue(resp.headers['Server'].startswith('Flask-Gopher'))
-        self.assertEqual(resp.read(), b'Hello World!')
+        self.assertIn("Content-Type", resp.headers)
+        self.assertIn("Content-Length", resp.headers)
+        self.assertTrue(resp.headers["Server"].startswith("Flask-Gopher"))
+        self.assertEqual(resp.read(), b"Hello World!")
 
     def test_render_menu(self):
         """
         Check that gopher menu pages are properly formatted.
         """
-        resp = self.send_data(b'/menu\r\n')
-        text = '\r\n'.join([
-            '1Submenu\t/menu\tgopher.server.com\t7000',
-            '0Text\t/static/file.txt\tgopher.server.com\t7000',
-            'i{line}\tfake\texample.com\t0',
-            'i{line}\tfake\texample.com\t0',
-            'ifoobar\tfake\texample.com\t0',
-            '.', ''])
-        text = text.format(line='x' * self.gopher.width)
+        resp = self.send_data(b"/menu\r\n")
+        text = "\r\n".join(
+            [
+                "1Submenu\t/menu\tgopher.server.com\t7000",
+                "0Text\t/static/file.txt\tgopher.server.com\t7000",
+                "i{line}\tfake\texample.com\t0",
+                "i{line}\tfake\texample.com\t0",
+                "ifoobar\tfake\texample.com\t0",
+                ".",
+                "",
+            ]
+        )
+        text = text.format(line="x" * self.gopher.width)
         self.assertEqual(resp, text.encode())
 
     def test_render_menu_template(self):
         """
         Check that jinja templates generate correctly for gopher menus.
         """
-        resp = self.send_data(b'/template\r\n')
-        text = '\r\n'.join([
-            'i{space}Title\tfake\texample.com\t0',
-            'igopher://gopher.server.com:7000/1/menu\tfake\texample.com\t0',
-            '1Home\t/menu\tgopher.server.com\t7000',
-            'i0\tfake\texample.com\t0',
-            'i1\tfake\texample.com\t0',
-            'i2\tfake\texample.com\t0',
-            '.', ''])
-        text = text.format(space=' ' * (self.gopher.width - len('Title')))
+        resp = self.send_data(b"/template\r\n")
+        text = "\r\n".join(
+            [
+                "i{space}Title\tfake\texample.com\t0",
+                "igopher://gopher.server.com:7000/1/menu\tfake\texample.com\t0",
+                "1Home\t/menu\tgopher.server.com\t7000",
+                "i0\tfake\texample.com\t0",
+                "i1\tfake\texample.com\t0",
+                "i2\tfake\texample.com\t0",
+                ".",
+                "",
+            ]
+        )
+        text = text.format(space=" " * (self.gopher.width - len("Title")))
         self.assertEqual(resp, text.encode())
 
     def test_session(self):
@@ -312,60 +332,56 @@ class TestFunctional(unittest.TestCase):
 
         # If the session is set on the server, it should be inserted into
         # any internal URLs in the response.
-        resp = self.send_data(b'/session\r\n')
-        text = '\r\n'.join([
-            'iname:\tfake\texample.com\t0',
-            '1Home\t/menu?_session={session_str}\tgopher.server.com\t7000',
-            '1External\t/\tdebian.org\t70',
-            '.', ''])
+        resp = self.send_data(b"/session\r\n")
+        text = "\r\n".join(
+            [
+                "iname:\tfake\texample.com\t0",
+                "1Home\t/menu?_session={session_str}\tgopher.server.com\t7000",
+                "1External\t/\tdebian.org\t70",
+                ".",
+                "",
+            ]
+        )
 
         # As long as the secret key, the salt, and the session data are fixed,
         # the session string should always encode to the same value.
-        session_str = 'eyJuYW1lIjoiZnJhbiJ9.Ck3_ZpFWAkOiUONd-pmfkHV23A4'
+        session_str = "eyJuYW1lIjoiZnJhbiJ9.Ck3_ZpFWAkOiUONd-pmfkHV23A4"
         text = text.format(session_str=session_str)
         self.assertEqual(resp, text.encode())
 
         # Now add the session to the request URL, and make sure that it's
         # recognized and loaded into the server.
-        selector = ('/session?_session=%s\r\n' % session_str).encode()
+        selector = ("/session?_session=%s\r\n" % session_str).encode()
         resp = self.send_data(selector)
-        text = '\r\n'.join([
-            'iname: fran\tfake\texample.com\t0',
-            '1Home\t/menu?_session={session_str}\tgopher.server.com\t7000',
-            '1External\t/\tdebian.org\t70',
-            '.', ''])
+        text = "\r\n".join(
+            [
+                "iname: fran\tfake\texample.com\t0",
+                "1Home\t/menu?_session={session_str}\tgopher.server.com\t7000",
+                "1External\t/\tdebian.org\t70",
+                ".",
+                "",
+            ]
+        )
         text = text.format(session_str=session_str)
         self.assertEqual(resp, text.encode())
-
-    def test_ssl_connection(self):
-        """
-        Clients should be able to optionally negotiate SSL connections.
-        """
-        # Insecure connection
-        resp = self.send_data(b'/ssl\r\n')
-        self.assertEqual(resp, b'False')
-
-        # Secure connection
-        resp = self.send_data(b'/ssl\r\n', use_ssl=True)
-        self.assertEqual(resp, b'True')
 
     def test_directory_load_file(self):
         """
         Should be able to serve a file from a custom directory.
         """
-        resp = self.send_data(b'/directory/test_file.txt\r\n')
-        self.assertEqual(resp, b'File Contents')
+        resp = self.send_data(b"/directory/test_file.txt\r\n")
+        self.assertEqual(resp, b"File Contents\n")
 
         # Should not be able to break out of the directory
-        resp = self.send_data(b'/directory/..\r\n')
-        self.assertTrue(resp.startswith(b'iError: 404 Not Found'))
+        resp = self.send_data(b"/directory/..\r\n")
+        self.assertTrue(resp.startswith(b"iError: 404 Not Found"))
 
     def test_directory_load_folder(self):
         """
         Should be able to generate a gopher menu from a directory.
         """
-        resp = self.send_data(b'/directory\r\n')
-        line = b'0test_file.txt\t/directory/test_file.txt\tgopher.server.com\t7000\r\n'
+        resp = self.send_data(b"/directory\r\n")
+        line = b"0test_file.txt\t/directory/test_file.txt\tgopher.server.com\t7000\r\n"
         self.assertIn(line, resp)
 
 
@@ -373,6 +389,7 @@ class TestFunctionalThreaded(TestFunctional):
     """
     Re-run all the functional tests using the multi-threaded server
     """
+
     threaded = True
 
     def test_gopher_server_type(self):
@@ -387,18 +404,17 @@ class TestFunctionalThreaded(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Open a connection and but don't stream any data
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
 
             # Open a second connection before finishing the first one
-            resp = self.send_data(b'/echo/request-2\n')
-            self.assertEqual(resp, b'request-2')
+            resp = self.send_data(b"/echo/request-2\n")
+            self.assertEqual(resp, b"request-2")
 
             # Now go back and finish the first request
-            s.sendall(b'/echo/request-1\n')
+            s.sendall(b"/echo/request-1\n")
             resp = s.recv(2048)
             s.close()
-            self.assertEqual(resp, b'request-1')
+            self.assertEqual(resp, b"request-1")
 
     def test_isolated_requests(self):
         """
@@ -406,25 +422,25 @@ class TestFunctionalThreaded(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Start streaming data but don't finish
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
-            s.sendall(b'/echo/requ')
+            s.sendall(b"/echo/requ")
 
             # Open a second connection before finishing the first one
-            resp = self.send_data(b'/echo/request-2\n')
-            self.assertEqual(resp, b'request-2')
+            resp = self.send_data(b"/echo/request-2\n")
+            self.assertEqual(resp, b"request-2")
 
             # Now go back and finish the first request
-            s.sendall(b'est-1\n')
+            s.sendall(b"est-1\n")
             resp = s.recv(2048)
             s.close()
-            self.assertEqual(resp, b'request-1')
+            self.assertEqual(resp, b"request-1")
 
 
 class TestFunctionalForking(TestFunctional):
     """
     Re-run all the functional tests using the multi-process server
     """
+
     processes = 4
 
     def test_gopher_server_type(self):
@@ -440,18 +456,17 @@ class TestFunctionalForking(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Open a connection and but don't stream any data
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
 
             # Open a second connection before finishing the first one
-            resp = self.send_data(b'/echo/request-2\n')
-            self.assertEqual(resp, b'request-2')
+            resp = self.send_data(b"/echo/request-2\n")
+            self.assertEqual(resp, b"request-2")
 
             # Now go back and finish the first request
-            s.sendall(b'/echo/request-1\n')
+            s.sendall(b"/echo/request-1\n")
             resp = s.recv(2048)
             s.close()
-            self.assertEqual(resp, b'request-1')
+            self.assertEqual(resp, b"request-1")
 
     def test_isolated_requests(self):
         """
@@ -459,19 +474,18 @@ class TestFunctionalForking(TestFunctional):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Start streaming data but don't finish
-            s = ssl.wrap_socket(s)
             s.connect((self.server.host, self.server.port))
-            s.sendall(b'/echo/requ')
+            s.sendall(b"/echo/requ")
 
             # Open a second connection before finishing the first one
-            resp = self.send_data(b'/echo/request-2\n')
-            self.assertEqual(resp, b'request-2')
+            resp = self.send_data(b"/echo/request-2\n")
+            self.assertEqual(resp, b"request-2")
 
             # Now go back and finish the first request
-            s.sendall(b'est-1\n')
+            s.sendall(b"est-1\n")
             resp = s.recv(2048)
             s.close()
-            self.assertEqual(resp, b'request-1')
+            self.assertEqual(resp, b"request-1")
 
 
 class TestTextFormatter(unittest.TestCase):
@@ -479,150 +493,151 @@ class TestTextFormatter(unittest.TestCase):
         self.formatter = TextFormatter(default_width=70)
 
     def test_banner_normal(self):
-        output = self.formatter.banner('BANNER')
+        output = self.formatter.banner("BANNER")
         lines = output.splitlines()
         self.assertEqual(len(lines), 3)
         self.assertTrue(all(len(line) == 70 for line in lines))
-        self.assertEqual(lines[1][0], '-')
-        self.assertEqual(lines[1][-1], '-')
+        self.assertEqual(lines[1][0], "-")
+        self.assertEqual(lines[1][-1], "-")
 
     def test_banner_multiline(self):
-        text = 'BANNER LINE 1\nBANNER LINE 2'
+        text = "BANNER LINE 1\nBANNER LINE 2"
         output = self.formatter.banner(text, width=20)
         lines = output.splitlines()
         self.assertEqual(len(lines), 4)
         self.assertTrue(all(len(line) == 20 for line in lines))
 
     def test_banner_custom_ch(self):
-        output = self.formatter.banner('BANNER', ch='+-', side='%$', width=40)
+        output = self.formatter.banner("BANNER", ch="+-", side="%$", width=40)
         lines = output.splitlines()
         self.assertEqual(len(lines), 3)
         self.assertTrue(all(len(line) == 40 for line in lines))
 
     def test_banner_no_border(self):
-        output = self.formatter.banner('BANNER', ch='', side='')
-        self.assertEqual(output, 'BANNER'.center(70))
+        output = self.formatter.banner("BANNER", ch="", side="")
+        self.assertEqual(output, "BANNER".center(70))
 
     def test_wrap(self):
-        text = 'f' * 100 + '\n' + 'g' * 100
-        output = self.formatter.wrap(text, indent='**')
+        text = "f" * 100 + "\n" + "g" * 100
+        output = self.formatter.wrap(text, indent="**")
         lines = output.splitlines()
         self.assertEqual(len(lines), 4)
         self.assertEqual(max(len(line) for line in lines), 70)
-        self.assertTrue(all(line.startswith('**') for line in lines))
+        self.assertTrue(all(line.startswith("**") for line in lines))
 
     def test_center(self):
-        text = 'line 1\nlonger line 2\n'
-        output = self.formatter.center(text, fillchar='_')
+        text = "line 1\nlonger line 2\n"
+        output = self.formatter.center(text, fillchar="_")
         lines = output.splitlines()
         self.assertTrue(all(len(line) == 70 for line in lines))
-        self.assertTrue(lines[0].startswith('_'))
-        self.assertTrue(lines[1].startswith('_'))
-        self.assertTrue(lines[0].endswith('_'))
-        self.assertTrue(lines[1].endswith('_'))
+        self.assertTrue(lines[0].startswith("_"))
+        self.assertTrue(lines[1].startswith("_"))
+        self.assertTrue(lines[0].endswith("_"))
+        self.assertTrue(lines[1].endswith("_"))
 
     def test_rjust(self):
-        text = 'line 1\nlonger line 2\n'
-        output = self.formatter.rjust(text, fillchar='_')
+        text = "line 1\nlonger line 2\n"
+        output = self.formatter.rjust(text, fillchar="_")
         lines = output.splitlines()
         self.assertTrue(all(len(line) == 70 for line in lines))
-        self.assertTrue(lines[0].startswith('_'))
-        self.assertTrue(lines[1].startswith('_'))
-        self.assertTrue(lines[0].endswith('_line 1'))
-        self.assertTrue(lines[1].endswith('_longer line 2'))
+        self.assertTrue(lines[0].startswith("_"))
+        self.assertTrue(lines[1].startswith("_"))
+        self.assertTrue(lines[0].endswith("_line 1"))
+        self.assertTrue(lines[1].endswith("_longer line 2"))
 
     def test_ljust(self):
-        text = 'line 1\nlonger line 2\n'
-        output = self.formatter.ljust(text, fillchar='_')
+        text = "line 1\nlonger line 2\n"
+        output = self.formatter.ljust(text, fillchar="_")
         lines = output.splitlines()
         self.assertTrue(all(len(line) == 70 for line in lines))
-        self.assertTrue(lines[0].startswith('line 1_'))
-        self.assertTrue(lines[1].startswith('longer line 2_'))
-        self.assertTrue(lines[0].endswith('_'))
-        self.assertTrue(lines[1].endswith('_'))
+        self.assertTrue(lines[0].startswith("line 1_"))
+        self.assertTrue(lines[1].startswith("longer line 2_"))
+        self.assertTrue(lines[0].endswith("_"))
+        self.assertTrue(lines[1].endswith("_"))
 
     def test_float_right(self):
-        left = 'left line 1\nleft line 2'
-        right = 'right line 1'
-        output = self.formatter.float_right(left, right, fillchar='_')
+        left = "left line 1\nleft line 2"
+        right = "right line 1"
+        output = self.formatter.float_right(left, right, fillchar="_")
         lines = output.splitlines()
         self.assertTrue(all(len(line) == 70 for line in lines))
-        self.assertTrue(lines[0].startswith('left line 1_'))
-        self.assertTrue(lines[1].startswith('left line 2_'))
-        self.assertTrue(lines[0].endswith('_right line 1'))
-        self.assertTrue(lines[1].endswith('_'))
+        self.assertTrue(lines[0].startswith("left line 1_"))
+        self.assertTrue(lines[1].startswith("left line 2_"))
+        self.assertTrue(lines[0].endswith("_right line 1"))
+        self.assertTrue(lines[1].endswith("_"))
 
     def test_figlet_handle_error(self):
         # Sane defaults when the figlet renderer doesn't have a wide enough screen
-        output = self.formatter.figlet('foo', font='doh', width=10)
-        self.assertEqual(output, 'foo')
-        output = self.formatter.figlet('foo', font='doh', width=10, justify='center')
-        self.assertEqual(output, '   foo    ')
-        output = self.formatter.figlet('foo', font='doh', width=10, justify='right')
-        self.assertEqual(output, '       foo')
+        output = self.formatter.figlet("foo", font="doh", width=10)
+        self.assertEqual(output, "foo")
+        output = self.formatter.figlet("foo", font="doh", width=10, justify="center")
+        self.assertEqual(output, "   foo    ")
+        output = self.formatter.figlet("foo", font="doh", width=10, justify="right")
+        self.assertEqual(output, "       foo")
 
     def test_figlet(self):
-        output = self.formatter.figlet('foobar', font='alpha')
+        output = self.formatter.figlet("foobar", font="alpha")
         lines = output.splitlines()
         self.assertGreater(len(lines), 1)
         self.assertTrue(all(len(line) <= 70 for line in lines))
 
     def test_underline(self):
-        output = self.formatter.underline('Super Duper')
+        output = self.formatter.underline("Super Duper")
         lines = output.splitlines()
         self.assertEqual(len(lines[0]), len(lines[1]))
 
     def test_underline_ch(self):
-        output = self.formatter.underline('Super Duper', ch='*-')
+        output = self.formatter.underline("Super Duper", ch="*-")
         lines = output.splitlines()
         self.assertEqual(len(lines[0]), len(lines[1]))
-        self.assertTrue(lines[1].startswith('*-'))
+        self.assertTrue(lines[1].startswith("*-"))
 
     def test_underline_multiline(self):
-        output = self.formatter.underline('longer line\nshort line')
+        output = self.formatter.underline("longer line\nshort line")
         lines = output.splitlines()
         self.assertEqual(len(lines[0]), len(lines[2]))
 
     def test_tabulate(self):
         data = [
-            ('text', 'int', 'float'),
-            ('Cell 1', 100, 1 / 3),
-            ('Cell 2', -25, 0.001),
-            ('Cell 3', 0, 0)]
-        output = self.formatter.tabulate(data, headers='firstrow', tablefmt='psql')
+            ("text", "int", "float"),
+            ("Cell 1", 100, 1 / 3),
+            ("Cell 2", -25, 0.001),
+            ("Cell 3", 0, 0),
+        ]
+        output = self.formatter.tabulate(data, headers="firstrow", tablefmt="psql")
         lines = output.splitlines()
         self.assertTrue(all(len(line) == 29 for line in lines))
 
 
 class TestGopherMenu(unittest.TestCase):
     def setUp(self):
-        self.menu = GopherMenu('10.10.10.10', 7007)
+        self.menu = GopherMenu("10.10.10.10", 7007)
 
     def test_default_entry(self):
-        line = self.menu.file('Hello World')
-        self.assertEqual(line, '0Hello World\t/\t10.10.10.10\t7007')
+        line = self.menu.file("Hello World")
+        self.assertEqual(line, "0Hello World\t/\t10.10.10.10\t7007")
 
     def test_default_no_port_external(self):
-        line = self.menu.submenu('Hello World', host='hngopher.com')
-        self.assertEqual(line, '1Hello World\t/\thngopher.com\t70')
+        line = self.menu.submenu("Hello World", host="hngopher.com")
+        self.assertEqual(line, "1Hello World\t/\thngopher.com\t70")
 
     def test_strip_invalid_characters(self):
-        line = self.menu.query('Hello \r\nWorld\t', selector='/\tfoo\t')
-        self.assertEqual(line, '7Hello World\t/foo\t10.10.10.10\t7007')
+        line = self.menu.query("Hello \r\nWorld\t", selector="/\tfoo\t")
+        self.assertEqual(line, "7Hello World\t/foo\t10.10.10.10\t7007")
 
     def test_html(self):
-        line = self.menu.html('Firefox', 'http://www.firefox.com')
-        self.assertEqual(line, 'hFirefox\tURL:http://www.firefox.com\t10.10.10.10\t7007')
+        line = self.menu.html("Firefox", "http://www.firefox.com")
+        self.assertEqual(line, "hFirefox\tURL:http://www.firefox.com\t10.10.10.10\t7007")
 
     def test_title(self):
-        line = self.menu.title('Hello World')
-        self.assertEqual(line, 'iHello World\tTITLE\texample.com\t0')
+        line = self.menu.title("Hello World")
+        self.assertEqual(line, "iHello World\tTITLE\texample.com\t0")
 
     def test_aliased_names(self):
-        self.assertEqual(self.menu.file('test'), self.menu.text('test'))
-        self.assertEqual(self.menu.submenu('test'), self.menu.dir('test'))
-        self.assertEqual(self.menu.binary('test'), self.menu.bin('test'))
+        self.assertEqual(self.menu.file("test"), self.menu.text("test"))
+        self.assertEqual(self.menu.submenu("test"), self.menu.dir("test"))
+        self.assertEqual(self.menu.binary("test"), self.menu.bin("test"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

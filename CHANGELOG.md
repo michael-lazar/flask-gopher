@@ -1,3 +1,20 @@
+## v3.0.0 (unreleased)
+
+This version removes the ability to establish TLS connections
+over gopher. The code for this was particularly annoying to
+monkey-patch, and the feature never gained significant adoption
+beyond a proof-of-concept.
+
+- Added support for python 3.9, 3.10, 3.11.
+- Dropped support for python 3.5, 3.6.
+- Migrated build from travis.ci to github actions.
+- Removed the `make_gopher_ssl_server` function.
+- Removed the following WSGI server classes:
+  - ``GopherBaseWSGIServer``
+  - ``GopherSimpleWSGIServer``
+  - ``GopherThreadedWSGIServer``
+  - ``GopherForkingWSGIServer``
+
 ### v2.2.1 (2020-04-11)
 
 - Pin the werkzeug dependency to avoid breaking dependency changes.
@@ -12,7 +29,7 @@
   - ``menu.submenu()`` -> ``menu.dir()``
   - ``menu.file()`` -> ``menu.text()``
   - ``menu.binary()`` -> ``menu.bin()``
-  
+
 This was done as a personal preference because I found the original method
 names to be overly verbose and hard to remember. The original methods will
 remain for backwards compatibility, but they will no longer be listed in
