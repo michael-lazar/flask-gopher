@@ -35,7 +35,8 @@
 
 ## Demo
 
-A live demonstration of the Flask-Gopher server is available in gopherspace at the following URL:
+A live demonstration of the Flask-Gopher server is available in
+gopherspace at the following URL:
 
 ---
 
@@ -49,15 +50,27 @@ A live demonstration of the Flask-Gopher server is available in gopherspace at t
 
 *What is gopher?*
 
-Gopher is an alternative to the World Wide Web that peaked in popularity in the early 90's. There are still a handful of gopher sites maintained by enthusiasts; you can learn more about its history at [floodgap](http://gopher.floodgap.com/gopher/).
+Gopher is an alternative to the World Wide Web that peaked in
+popularity in the early 90's. There are still a handful of gopher
+sites maintained by enthusiasts; you can learn more about its history
+at [floodgap](http://gopher.floodgap.com/gopher/).
 
 *What is flask-gopher?*
 
-Flask-Gopher is a Flask extension that adds a thin *Gopher -> HTTP* compatability layer around the built-in webserver. It allows you to build fully [RFC 1466](https://tools.ietf.org/html/rfc1466) compliant gopher servers, with complete access to Flask's routing, templating engine, debugger, and more!
+Flask-Gopher is a Flask extension that adds a thin *Gopher -> HTTP*
+compatability layer around the built-in webserver. It allows you to
+build fully [RFC 1466](https://tools.ietf.org/html/rfc1466) compliant
+gopher servers, with complete access to Flask's routing, templating
+engine, debugger, and more!
 
 *Who is this for?*
 
-I created this extension because I wanted to experiment with building dynamic gopher applications, and I felt limited by the lack of flexibility in other gopher servers. The target audience is web developers with experience using a high level web framework like Django or Ruby on Rails. You should feel comfortable writing python code and cross-referencing the official Flask documentation.
+I created this extension because I wanted to experiment with building
+dynamic gopher applications, and I felt limited by the lack of
+flexibility in other gopher servers. The target audience is web
+developers with experience using a high level web framework like
+Django or Ruby on Rails. You should feel comfortable writing python
+code and cross-referencing the official Flask documentation.
 
 ## Quickstart
 
@@ -81,7 +94,7 @@ if __name__ == '__main__':
 
 ## Installation
 
-This package requires **Python v3.5 or higher**
+This package requires **Python v3.7 or higher**
 
 ```
 pip install flask_gopher
@@ -89,32 +102,42 @@ pip install flask_gopher
 
 ## Building Gopher Menus
 
-Gopher menus are structured text files that display information about the current page and contain links to other gopher resources. A gopher menu is loosely equivalent to an HTML document with only ``<a>`` and ``<span>`` tags. Each line in the menu has a *type* that decribes what kind of resource it links to (text, binary, html, telnet, etc.).
+Gopher menus are structured text files that display information
+about the current page and contain links to other gopher resources.
+A gopher menu is loosely equivalent to an HTML document with only
+``<a>`` and ``<span>`` tags. Each line in the menu has a *type*
+that describes what kind of resource it links to (text, binary, html,
+telnet, etc.).
 
-Flask-Gopher provides several helper methods for constructing gopher menu lines:
+Flask-Gopher provides several helper methods for constructing gopher
+menu lines:
 
-| Method        | Link Descriptor     | Meaning  |
-| ------------- | ------------------- | -------- |
-| menu.text | 0 | Plain text file |
-| menu.dir | 1 | Gopher menu |
-| menu.ccso | 2 | CCSO database; other databases |
-| menu.error | 3 | Error message |
-| menu.binhex | 4 | Macintosh BinHex file |
-| menu.archive | 5 | Archive file (zip, tar, gzip) |
-| menu.uuencoded | 6 | UUEncoded file |
-| menu.query | 7 | Search query |
-| menu.telnet | 8 | Telnet session |
-| menu.bin | 9 | Binary file |
-| menu.gif | g | GIF format graphics file |
-| menu.image | I | Other Image file |
-| menu.doc | d | Word processing document (ps, pdf, doc) |
-| menu.sound | s | Sound file |
-| menu.video | ; | Video file |
-| menu.info | i | Information line |
-| menu.title | i | Title line |
-| menu.html | h | HTML document |
+| Method         | Link Descriptor | Meaning                                 |
+|----------------|-----------------|-----------------------------------------|
+| menu.text      | 0               | Plain text file                         |
+| menu.dir       | 1               | Gopher menu                             |
+| menu.ccso      | 2               | CCSO database; other databases          |
+| menu.error     | 3               | Error message                           |
+| menu.binhex    | 4               | Macintosh BinHex file                   |
+| menu.archive   | 5               | Archive file (zip, tar, gzip)           |
+| menu.uuencoded | 6               | UUEncoded file                          |
+| menu.query     | 7               | Search query                            |
+| menu.telnet    | 8               | Telnet session                          |
+| menu.bin       | 9               | Binary file                             |
+| menu.gif       | g               | GIF format graphics file                |
+| menu.image     | I               | Other Image file                        |
+| menu.doc       | d               | Word processing document (ps, pdf, doc) |
+| menu.sound     | s               | Sound file                              |
+| menu.video     | ;               | Video file                              |
+| menu.info      | i               | Information line                        |
+| menu.title     | i               | Title line                              |
+| menu.html      | h               | HTML document                           |
 
-Most of these methods require a text description for the link, and will accept a path selector and a host/port. They return a line of text that has been pre-formatted for a gopher menu. You can then pass all of the lines along into ``gopher.render_menu()`` to build the response body.
+Most of these methods require a text description for the link, and
+will accept a path selector and a host/port. They return a line of
+text that has been pre-formatted for a gopher menu. You can then pass
+all of the lines along into ``gopher.render_menu()`` to build the
+response body.
 
 ```python
 @app.route('/')
@@ -166,9 +189,14 @@ And here's what it looks like inside of a gopher client:
 
 ## Using Templates
 
-You can use Flask's Jinja2 templating engine to layout gopher menus. Flask-Gopher attaches ``gopher`` to the template namespace so you can access the menu helper functions. The recommended naming convention for gopher template files is to add a *.gopher* suffix. An example template file is shown below:
+You can use Flask's Jinja2 templating engine to layout gopher menus.
+Flask-Gopher attaches ``gopher`` to the template namespace so you can
+access the menu helper functions. The recommended naming convention
+for gopher template files is to add a *.gopher* suffix. An example
+template file is shown below:
 
 **templates/example_menu.gopher**
+
 ```
 {{ 'Centered Title' | underline('-') | center }}
 
@@ -181,7 +209,8 @@ Your IP address is {{ request.remote_addr }}
 {{ ('Served by ' + request.environ['SERVER_SOFTWARE']) | rjust }}
 ```
 
-Call ``gopher.render_menu_template()`` from inside of your route to compile the template into a gopher menu.
+Call ``gopher.render_menu_template()`` from inside of your route to
+compile the template into a gopher menu.
 
 ```python
 @app.route('/')
@@ -193,12 +222,20 @@ def index():
   <img alt="gopher" src="resources/example_template.png"/>
 </p>
 
-
 ## Gopher and WSGI
 
-Python's WSGI (Web Server Gateway Interface) is an established API that defines how python web servers (gunicorn, mod_wsgi, etc) communicate with application frameworks (Flask, Django, etc). It defines a clean boundary between low-level socket and request handling, and high-level application logic.
+Python's WSGI (Web Server Gateway Interface) is an established API
+that defines how python web servers (gunicorn, mod_wsgi, etc)
+communicate with application frameworks (Flask, Django, etc). It
+defines a clean boundary between low-level socket and request
+handling, and high-level application logic.
 
-WSGI was designed to be a very simple and flexible API, but at its heart it's built around HTTP requests. As such, it incorperates some HTTP specific components like request/response headers and status codes. Gopher is more simplistic and doesn't use these components. Here's an example of the difference in fetching a document with the two protocols:
+WSGI was designed to be a very simple and flexible API, but at its
+heart it's built around HTTP requests. As such, it incorperates some
+HTTP specific components like request/response headers and status
+codes. Gopher is more simplistic and doesn't use these components.
+Here's an example of the difference in fetching a document with the
+two protocols:
 
 <table>
 <tr><th colspan=2>HTTP</th><th colspan=2>Gopher</th></tr>
@@ -221,7 +258,12 @@ Content-Type: text/html
 <td width="20%"><pre>(body)</pre></td>
 </tr></table>
 
-In order to resolve the differences between gopher and HTTP, **Flask-Gopher** implements a custom ``GopherRequestHandler``. The handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It reads the first line of every TCP connection and determines which protocol the client is attempting to use. If the client is using gopher, the following assumptions are made:
+In order to resolve the differences between gopher and HTTP, *
+*Flask-Gopher** implements a custom ``GopherRequestHandler``. The
+handler hooks into the WSGI server (``werkzeug.BaseWSGIServer``). It
+reads the first line of every TCP connection and determines which
+protocol the client is attempting to use. If the client is using
+gopher, the following assumptions are made:
 
 - Set the request's *REQUEST_METHOD* to ``GET``
 - Set the request's *SERVER_PROTOCOL* (e.g. *HTTP/1.1*) to ``gopher``
@@ -229,7 +271,11 @@ In order to resolve the differences between gopher and HTTP, **Flask-Gopher** im
 - Discard the response status line
 - Discard all response headers
 
-Doing this makes a gopher connection *appear* like a normal HTTP request from the perspective of the WSGI application. It also provides metadata hooks that can be accessed from the Flask request. For example, you can respond the the request differently depending on which protocol is being used:
+Doing this makes a gopher connection *appear* like a normal HTTP
+request from the perspective of the WSGI application. It also provides
+metadata hooks that can be accessed from the Flask request. For
+example, you can respond the the request differently depending on
+which protocol is being used:
 
 ```python
 @app.route('/')
@@ -247,7 +293,9 @@ def index():
 - https://tools.ietf.org/html/draft-matavka-gopher-ii-03 (2015)
 - https://www.w3.org/Addressing/URL/4_1_Gopher+.html
 
-An interesting side note, the python standard library used to contain its own gopher module. It was deprecated in 2.5, and removed in 2.6. (<em>https://www.python.org/dev/peps/pep-0004/</em>)
+An interesting side note, the python standard library used to contain
+its own gopher module. It was deprecated in 2.5, and removed in
+2.6. (<em>https://www.python.org/dev/peps/pep-0004/</em>)
 
 
 >     Module name:   gopherlib
@@ -256,4 +304,5 @@ An interesting side note, the python standard library used to contain its own go
 >     Documentation: Documented as deprecated since Python 2.5.  Removed
 >                    in Python 2.6.
 
-A reference gopher client still exists in the old python SVN trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
+A reference gopher client still exists in the old python SVN
+trunk: https://svn.python.org/projects/python/trunk/Demo/sockets/gopher.py
