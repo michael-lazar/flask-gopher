@@ -12,8 +12,7 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from flask import _request_ctx_stack as request_ctx_stack  # noqa
-from flask import current_app, render_template, request, url_for
+from flask import current_app, g, render_template, request, url_for
 from flask.helpers import send_file
 from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
 from itsdangerous import BadSignature, URLSafeSerializer
@@ -482,13 +481,11 @@ class GopherExtension:
         initialized with the same host/port that the request's url_adapter is
         using.
         """
-        ctx = request_ctx_stack.top
-        if ctx is not None:
-            if not hasattr(ctx, "gopher_menu"):
-                host = request.environ["SERVER_NAME"]
-                port = request.environ["SERVER_PORT"]
-                ctx.gopher_menu = self.menu_class(host, port)
-            return ctx.gopher_menu
+        if not hasattr(g, "_flask_gopher_menu"):
+            host = request.environ["SERVER_NAME"]
+            port = request.environ["SERVER_PORT"]
+            g._flask_gopher_menu = self.menu_class(host, port)
+        return g._flask_gopher_menu
 
     def render_menu(self, *lines):
         """
