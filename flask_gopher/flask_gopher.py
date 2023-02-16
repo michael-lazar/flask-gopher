@@ -489,8 +489,8 @@ class GopherExtension:
         if not hasattr(g, "_flask_gopher_menu"):
             host = request.environ["SERVER_NAME"]
             port = request.environ["SERVER_PORT"]
-            setattr(g, "_flask_gopher_menu", self.menu_class(host, port))
-        return getattr(g, "_flask_gopher_menu")
+            g._flask_gopher_menu = self.menu_class(host, port)
+        return g._flask_gopher_menu
 
     def render_menu(self, *lines):
         """

@@ -4,7 +4,7 @@ This version pulls in some long overdue dependency updates and adds
 support for the latest versions of Flask and Python.
 
 - Supported Python versions: `3.7`, `3.8`, `3.9`, `3.10`, `3.11`.
-- Supported Flask versions: `2.x`, `3.x`
+- Supported Flask versions: `2.1`, `2.2`
 
 This version also removes the capability to negotiate TLS over
 gopher. The code for this was particularly annoying to monkey-patch,
