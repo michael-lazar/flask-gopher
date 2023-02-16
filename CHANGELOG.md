@@ -1,4 +1,4 @@
-## v3.0.0 (unreleased)
+## v3.0.0 (2023-02-15)
 
 This version pulls in some long overdue dependency updates and adds
 support for the latest versions of Flask and Python.
