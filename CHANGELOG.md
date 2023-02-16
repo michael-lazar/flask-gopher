@@ -1,13 +1,15 @@
 ## v3.0.0 (unreleased)
 
-This version removes the ability to establish TLS connections
-over gopher. The code for this was particularly annoying to
-monkey-patch, and the feature never gained significant adoption
-beyond a proof-of-concept.
+This version pulls in some long overdue dependency updates and adds
+support for the latest versions of Flask and Python.
 
-- Added support for python 3.9, 3.10, 3.11.
-- Dropped support for python 3.5, 3.6.
-- Migrated build from travis.ci to github actions.
+- Supported Python versions: `3.7`, `3.8`, `3.9`, `3.10`, `3.11`.
+- Supported Flask versions: `2.1`, `2.2`
+
+This version also removes the capability to negotiate TLS over
+gopher. The code for this was particularly annoying to monkey-patch,
+and the feature never gained traction to make it worth maintaining.
+
 - Removed the `make_gopher_ssl_server` function.
 - Removed the following WSGI server classes:
   - ``GopherBaseWSGIServer``

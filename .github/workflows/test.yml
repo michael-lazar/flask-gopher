@@ -13,6 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        flask-version: ["2.1", "2.2"]
         os: [ubuntu-latest]
     steps:
     - name: Check out repository
@@ -23,7 +24,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install packages
       run: |
-        pip install .
+        pip install . Flask==${{ matrix.flask-version}}
         pip install .[test]
     - name: Run mypy
       run: |

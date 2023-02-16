@@ -158,6 +158,7 @@ def demo_form(field):
 
     # Check if there was a new field added to the request
     request_query = request.args.to_dict()
+
     if field in form_fields:
         request_query[field] = request.environ["SEARCH_TEXT"]
 
@@ -167,7 +168,7 @@ def demo_form(field):
         if name in request_query:
             lines.append(f"{description:<13}: {request_query[name]}")
         else:
-            url = url_for("demo_form", field=name, **request_query)
+            url = url_for("demo_form", _external=False, field=name, **request_query)
             lines.append(gopher.menu.query(f"{description:<13}:", url))
 
     # Add the buttons at the bottom of the form
@@ -177,7 +178,7 @@ def demo_form(field):
     else:
         lines.append("clear")
     if request_query.keys() == form_fields.keys():
-        url = url_for("demo_form", field="submit", **request_query)
+        url = url_for("demo_form", _external=False, field="submit", **request_query)
         lines.append(gopher.menu.dir("submit", url))
     else:
         lines.append("submit")

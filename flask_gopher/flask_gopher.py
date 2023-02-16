@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mimetypes
 import os
 import re
@@ -12,27 +14,30 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from flask import _request_ctx_stack as request_ctx_stack  # noqa
-from flask import current_app, render_template, request, url_for
-from flask.helpers import safe_join, send_file
+from flask import current_app, g, render_template, request, url_for
+from flask.helpers import send_file
 from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
 from itsdangerous import BadSignature, URLSafeSerializer
 from jinja2.filters import escape
 from pyfiglet import FigletError, figlet_format
 from tabulate import tabulate
-from werkzeug.exceptions import BadRequest, HTTPException
+from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.local import LocalProxy
-from werkzeug.serving import BaseWSGIServer, WSGIRequestHandler
+from werkzeug.security import safe_join
+from werkzeug.serving import WSGIRequestHandler
 
 from .__version__ import __version__
 
 
 @LocalProxy
-def menu():
+def _menu():
     """
     Shortcut for gopher.menu
     """
     return current_app.extensions["gopher"].menu
+
+
+menu = cast("GopherMenu", _menu)
 
 
 def render_menu(*lines):
@@ -481,13 +486,11 @@ class GopherExtension:
         initialized with the same host/port that the request's url_adapter is
         using.
         """
-        ctx = request_ctx_stack.top
-        if ctx is not None:
-            if not hasattr(ctx, "gopher_menu"):
-                host = request.environ["SERVER_NAME"]
-                port = request.environ["SERVER_PORT"]
-                ctx.gopher_menu = self.menu_class(host, port)
-            return ctx.gopher_menu
+        if not hasattr(g, "_flask_gopher_menu"):
+            host = request.environ["SERVER_NAME"]
+            port = request.environ["SERVER_PORT"]
+            g._flask_gopher_menu = self.menu_class(host, port)
+        return g._flask_gopher_menu
 
     def render_menu(self, *lines):
         """
@@ -584,11 +587,13 @@ class GopherExtension:
         if not _external:
             return url_for(endpoint, **values)
 
-        values["_scheme"] = "gopher"
-        url = url_for(endpoint, _external=_external, **values)
-        parts = url.split("/")
-        parts.insert(3, str(_type))
-        url = "/".join(parts)
+        url = url_for(endpoint, _external=True, **values)
+        if request.scheme == "gopher":
+            scheme, rest = url.split(":", maxsplit=1)
+            url = f"gopher:{rest}"
+            parts = url.split("/")
+            parts.insert(3, str(_type))
+            url = "/".join(parts)
         return url
 
 
@@ -678,8 +683,7 @@ class GopherRequestHandler(WSGIRequestHandler):
             # header or the SERVER_NAME env variable to match it.
             # Go look at werkzeug.routing.Map.bind_to_environ()
             try:
-                server = cast(BaseWSGIServer, self.server)
-                server_name = server.app.config.get("SERVER_NAME")
+                server_name = self.server.app.config.get("SERVER_NAME")  # type: ignore
             except Exception:
                 pass
             else:
@@ -780,6 +784,9 @@ class GopherDirectory:
         can only be invoked from inside of a flask view.
         """
         abs_filename = safe_join(self.local_directory, filename)
+        if abs_filename is None:
+            raise NotFound()
+
         if not os.path.isabs(abs_filename):
             abs_filename = os.path.join(current_app.root_path, abs_filename)
 
@@ -789,7 +796,7 @@ class GopherDirectory:
             data = self._parse_directory(filename, abs_filename)
             return self.result_class(True, data)
         else:
-            raise BadRequest()
+            raise NotFound()
 
     def _parse_directory(self, folder, abs_folder):
         """
