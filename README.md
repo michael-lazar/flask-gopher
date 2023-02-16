@@ -27,7 +27,6 @@
 * [Building Gopher Menus](#building-gopher-menus)
 * [Using Templates](#using-templates)
 * [Gopher and WSGI](#gopher-and-wsgi)
-* [TLS Support](#tls-support)
 * [Gopher Protocol References](#gopher-protocol-references)
 
 ## Demo
