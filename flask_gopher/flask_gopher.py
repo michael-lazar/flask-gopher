@@ -28,10 +28,16 @@ from werkzeug.serving import WSGIRequestHandler
 
 from .__version__ import __version__
 
-"""
-Shortcut for gopher.menu
-"""
-menu = cast("GopherMenu", LocalProxy(lambda: current_app.extensions["gopher"].menu))
+
+@LocalProxy
+def _menu():
+    """
+    Shortcut for gopher.menu
+    """
+    return current_app.extensions["gopher"].menu
+
+
+menu = cast("GopherMenu", _menu)
 
 
 def render_menu(*lines):
@@ -483,8 +489,8 @@ class GopherExtension:
         if not hasattr(g, "_flask_gopher_menu"):
             host = request.environ["SERVER_NAME"]
             port = request.environ["SERVER_PORT"]
-            g._flask_gopher_menu = self.menu_class(host, port)
-        return g._flask_gopher_menu
+            setattr(g, "_flask_gopher_menu", self.menu_class(host, port))
+        return getattr(g, "_flask_gopher_menu")
 
     def render_menu(self, *lines):
         """
