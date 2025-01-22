@@ -489,13 +489,13 @@ class TestFunctionalForking(TestFunctional):
 
 class TestTextFormatter(unittest.TestCase):
     def setUp(self):
-        self.formatter = TextFormatter(default_width=70)
+        self.formatter = TextFormatter(default_width=69)
 
     def test_banner_normal(self):
         output = self.formatter.banner("BANNER")
         lines = output.splitlines()
         self.assertEqual(len(lines), 3)
-        self.assertTrue(all(len(line) == 70 for line in lines))
+        self.assertTrue(all(len(line) == 69 for line in lines))
         self.assertEqual(lines[1][0], "-")
         self.assertEqual(lines[1][-1], "-")
 
@@ -514,21 +514,21 @@ class TestTextFormatter(unittest.TestCase):
 
     def test_banner_no_border(self):
         output = self.formatter.banner("BANNER", ch="", side="")
-        self.assertEqual(output, "BANNER".center(70))
+        self.assertEqual(output, "BANNER".center(69))
 
     def test_wrap(self):
         text = "f" * 100 + "\n" + "g" * 100
         output = self.formatter.wrap(text, indent="**")
         lines = output.splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertEqual(max(len(line) for line in lines), 70)
+        self.assertEqual(max(len(line) for line in lines), 69)
         self.assertTrue(all(line.startswith("**") for line in lines))
 
     def test_center(self):
         text = "line 1\nlonger line 2\n"
         output = self.formatter.center(text, fillchar="_")
         lines = output.splitlines()
-        self.assertTrue(all(len(line) == 70 for line in lines))
+        self.assertTrue(all(len(line) == 69 for line in lines))
         self.assertTrue(lines[0].startswith("_"))
         self.assertTrue(lines[1].startswith("_"))
         self.assertTrue(lines[0].endswith("_"))
@@ -538,7 +538,7 @@ class TestTextFormatter(unittest.TestCase):
         text = "line 1\nlonger line 2\n"
         output = self.formatter.rjust(text, fillchar="_")
         lines = output.splitlines()
-        self.assertTrue(all(len(line) == 70 for line in lines))
+        self.assertTrue(all(len(line) == 69 for line in lines))
         self.assertTrue(lines[0].startswith("_"))
         self.assertTrue(lines[1].startswith("_"))
         self.assertTrue(lines[0].endswith("_line 1"))
@@ -548,7 +548,7 @@ class TestTextFormatter(unittest.TestCase):
         text = "line 1\nlonger line 2\n"
         output = self.formatter.ljust(text, fillchar="_")
         lines = output.splitlines()
-        self.assertTrue(all(len(line) == 70 for line in lines))
+        self.assertTrue(all(len(line) == 69 for line in lines))
         self.assertTrue(lines[0].startswith("line 1_"))
         self.assertTrue(lines[1].startswith("longer line 2_"))
         self.assertTrue(lines[0].endswith("_"))
@@ -559,7 +559,7 @@ class TestTextFormatter(unittest.TestCase):
         right = "right line 1"
         output = self.formatter.float_right(left, right, fillchar="_")
         lines = output.splitlines()
-        self.assertTrue(all(len(line) == 70 for line in lines))
+        self.assertTrue(all(len(line) == 69 for line in lines))
         self.assertTrue(lines[0].startswith("left line 1_"))
         self.assertTrue(lines[1].startswith("left line 2_"))
         self.assertTrue(lines[0].endswith("_right line 1"))
@@ -578,7 +578,7 @@ class TestTextFormatter(unittest.TestCase):
         output = self.formatter.figlet("foobar", font="alpha")
         lines = output.splitlines()
         self.assertGreater(len(lines), 1)
-        self.assertTrue(all(len(line) <= 70 for line in lines))
+        self.assertTrue(all(len(line) <= 69 for line in lines))
 
     def test_underline(self):
         output = self.formatter.underline("Super Duper")

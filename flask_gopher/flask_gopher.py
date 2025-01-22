@@ -59,7 +59,7 @@ class TextFormatter:
     Helper methods for applying formatting techniques to gopher menu text.
     """
 
-    def __init__(self, default_width=70):
+    def __init__(self, default_width=69):
         self.default_width = default_width
 
     def banner(self, text, ch="=", side="-", width=None):
@@ -379,7 +379,7 @@ class GopherExtension:
         </HTML>
         """
 
-    DEFAULT_WIDTH = 70
+    DEFAULT_WIDTH = 69
 
     def __init__(self, app=None, menu_class=GopherMenu, formatter_class=TextFormatter):
         self.show_stack_trace = None
@@ -754,7 +754,7 @@ class GopherDirectory:
         view_name,
         url_token="filename",
         show_timestamp=False,
-        width=70,
+        width=69,
     ):
         """
         Args:
